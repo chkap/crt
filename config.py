@@ -1,6 +1,7 @@
 
 import feature_extractor
 
+
 class TrainDataCfg(object):
     SEARCH_PATCH_RATIO = 3.0
     RESPONSE_GAUSSIAN_SIGMA_RATIO = 0.03
@@ -9,6 +10,7 @@ class TrainDataCfg(object):
 class FhogCfg(object):
     CELL_SIZE = 4
     BIN_NUM = 7
+
 
 class ConvRegressionCfg(object):
     REGULARIZATION_COEF = 0.0001
@@ -19,4 +21,8 @@ class ConvRegressionCfg(object):
 
 class ConvRegTrackerCfg(object):
     FEATURE_EXTRACTOR = feature_extractor.RgbExtractor
+
+
+class TestCfg(object):
+    SEQUENCE_DIR = '/home/chenkai/dataset/vtb_data/'
 
