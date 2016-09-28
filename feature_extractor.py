@@ -1,7 +1,7 @@
 
 import cv2
 import fhog
-from config import FhogCfg
+import config
 
 
 class FeatureExtractor(object):
@@ -41,8 +41,8 @@ class FhogExtractor(FeatureExtractor):
 
     def __init__(self):
         super(FhogExtractor, self).__init__()
-        self.cell_size = FhogCfg.CELL_SIZE
-        self.bin_num = FhogCfg.BIN_NUM
+        self.cell_size = config.FhogCfg.CELL_SIZE
+        self.bin_num = config.FhogCfg.BIN_NUM
         self._resolution = self.cell_size
         self._channel_num = 3*self.bin_num + 4
 

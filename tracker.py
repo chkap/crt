@@ -21,6 +21,8 @@ class ConvRegTracker(object):
         self.data_provider = None
         self.conv_regression = None
         self.feature_extractor = ConvRegTrackerCfg.FEATURE_EXTRACTOR
+        self._train_max_step_num = ConvRegTrackerCfg.TRAIN_MAX_STEP_NUM
+        self._train_loss_th = ConvRegTrackerCfg.TRAIN_LOSS_TH
         self._last_rect = None
 
         self._frame_no = None
@@ -35,7 +37,8 @@ class ConvRegTracker(object):
         self._track_info_list = list()
 
         self.data_provider = TrainDataProvider(self.feature_extractor, init_rect)
-        patch_rect = init_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio)
+        patch_rect = init_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio,
+                                                            self.data_provider.search_patch_ratio)
         feature = self.data_provider.generate_input_feature(image, patch_rect)
         response_size = [feature.shape[1], feature.shape[0]]
         response = self.data_provider.generate_label_response(response_size, patch_rect, init_rect)
@@ -50,7 +53,7 @@ class ConvRegTracker(object):
 
         self.conv_regression = ConvRegression(feature[np.newaxis,:,:,:], conv_size)
 
-        self.conv_regression.train(feature, response, 50)
+        self.conv_regression.train(feature, response, self._train_max_step_num, self._train_loss_th)
 
         self._last_rect = init_rect
 

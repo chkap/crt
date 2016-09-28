@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from config import ConvRegressionCfg
+import display
 
 
 class ConvRegression(object):
@@ -18,6 +19,8 @@ class ConvRegression(object):
         self._input_holder = None
         self._response_holder = None
         self._output_response = None
+        self._weight = None
+        self._bias = None
         self.graph = None
         self.session = None
 
@@ -34,50 +37,67 @@ class ConvRegression(object):
         self._build_graph(input_size, conv_size, input_mean)
 
     def _build_graph(self, input_size, conv_size, input_mean):
+        assert len(input_size) == 4 and len(conv_size) == 2
         self.graph = tf.Graph()
         with self.graph.as_default():
-            _input_shape = (None, input_size[0], input_size[1], input_size[2])
+            _input_shape = (None, input_size[1], input_size[2], input_size[3])
             self._input_holder = tf.placeholder(tf.float32, _input_shape, name='input_feature')
-            _output_shape = (None, input_size[0], input_size[1], 1)
+            _output_shape = (None, input_size[1], input_size[2], 1)
             self._response_holder = tf.placeholder(tf.float32, _output_shape, name='label_response')
             self._global_step = tf.Variable(0, trainable=False, name='global_step')
 
-            _weight_shape = [conv_size[0], conv_size[1], input_size[2], 1]
-            _weight_std = min(1/input_mean, 1)
-            _weight_init = tf.random_normal(shape=_weight_shape, stddev=_weight_std)
-            _weight = tf.Variable(_weight_init, name='conv_weight')
-            _bias = tf.Variable(0.0, name='conv_bias')
+            _weight_shape = [conv_size[0], conv_size[1], input_size[3], 1]
+            # _weight_std = min(1/input_mean, 1)
+            _weight_init = tf.zeros(shape=_weight_shape, dtype=tf.float32)
+            self._weight = tf.Variable(_weight_init, name='conv_weight')
+            self._bias = tf.Variable(0.0, name='conv_bias')
 
-            _conv_out = tf.nn.conv2d(self._input_holder, _weight, [1, 1, 1, 1], 'SAME')
-            self._output_response = tf.add(_conv_out, _bias)
+            _conv_out = tf.nn.conv2d(self._input_holder, self._weight, [1, 1, 1, 1], 'SAME')
+            self._output_response = tf.add(_conv_out, self._bias)
 
             _mean_loss = tf.reduce_mean(self._output_response - self._response_holder, reduction_indices=0)
             self._pred_loss = tf.nn.l2_loss(_mean_loss, name='l2_loss')
-            self._regu_loss = 0.5*self._regularization_coef * (tf.nn.l2_loss(_weight) + tf.mul(_bias, _bias))
+            self._regu_loss = 0.5*self._regularization_coef * \
+                              (tf.nn.l2_loss(self._weight) + tf.mul(self._bias, self._bias))
             self._total_loss = self._pred_loss + self._regu_loss
 
-            self._train_op = tf.train.MomentumOptimizer(self._learning_rate, self._momentum)
+            self._train_op = tf.train.MomentumOptimizer(self._learning_rate, self._momentum) \
+                .minimize(self._total_loss, global_step=self._global_step)
             self.session = tf.Session(graph=self.graph)
             self.session.run(tf.initialize_all_variables())
 
-    def train(self, features, response, step_num):
-        feed_dict = {self._input_holder: features,
-                     self._response_holder: response}
+    def get_global_step(self):
+        if self.session:
+            global_step = self.session.run(self._global_step)
+            return global_step
+        else:
+            return -1
+
+    def train(self, features, response, max_step_num, loss_th):
+        feed_dict = {self._input_holder: features[np.newaxis,:,:,:],
+                     self._response_holder: response[np.newaxis,:,:,np.newaxis]}
         i = 0
-        while i < step_num:
+        while i < max_step_num:
             if self._verbose:
-                fetches = [self._train_op, self._pred_loss, self._regu_loss, self._total_loss]
-                _, pred_loss, regu_loss, total_loss = self.session.run(fetches, feed_dict=feed_dict)
+                fetches = [self._train_op, self._pred_loss, self._regu_loss, self._total_loss, self._weight,
+                           self._bias, self._output_response]
+                _, pred_loss, regu_loss, total_loss, weight, bias, res = self.session.run(fetches, feed_dict=feed_dict)
                 print('pred_loss:{:.4e}, regu_loss: {:.4e}, total_loss:{:.4e}'.format(pred_loss,
                                                                                       regu_loss,
                                                                                       total_loss))
                 self._pred_loss_list.append(pred_loss)
                 self._regu_loss_list.append(regu_loss)
                 self._total_loss_list.append(total_loss)
+                step = self.get_global_step()
+                if step % 5 ==0:
+                    display.show_map(res[0,:,:,0])
             else:
-                self.session.run(self._train_op, feed_dict=feed_dict)
-
+                _, total_loss = self.session.run((self._train_op, self._total_loss), feed_dict=feed_dict)
+            if total_loss < loss_th:
+                break
             i += 1
+        if i >= max_step_num:
+            print('Warning, total_loss larger than loss_th even after {:d}steps'.format(i))
 
     def inference(self, features):
         feed_dict = {self._input_holder: features}

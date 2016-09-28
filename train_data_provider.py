@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+import cv2
 
 import feature_extractor
 from config import TrainDataCfg
@@ -40,12 +41,19 @@ class TrainData(object):
 class TrainDataProvider(object):
 
     def __init__(self, extractor, init_rect):
-        self.extractor = extractor
+        self.extractor_class = extractor
+        self.extractor = self.extractor_class()
         self.search_patch_ratio = TrainDataCfg.SEARCH_PATCH_RATIO
-        init_search_rect = init_rect.get_copy().scale_from_center(self.search_patch_ratio)
+        _size = math.sqrt(init_rect.w * init_rect.h)
+        if _size > TrainDataCfg.OBJECT_RESIZE_TH:
+            _scale = TrainDataCfg.OBJECT_RESIZE_TH / float(_size)
+        else:
+            _scale = 1.0
+        scale_w = init_rect.w * _scale * self.search_patch_ratio
+        scale_h = init_rect.h * _scale * self.search_patch_ratio
         _tmp = self.search_patch_ratio*self.extractor.get_resolution()
-        self.patch_scale_w = int(int(init_search_rect.w / float(_tmp) + 0.5) * _tmp)
-        self.patch_scale_h = int(int(init_search_rect.h / float(_tmp) + 0.5) * _tmp)
+        self.patch_scale_w = int(int(scale_w / float(_tmp) + 0.5) * _tmp)
+        self.patch_scale_h = int(int(scale_h / float(_tmp) + 0.5) * _tmp)
 
         self.response_sigma_x = float(self.patch_scale_w) / self.extractor.get_resolution() * \
             TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
@@ -53,8 +61,8 @@ class TrainDataProvider(object):
             TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
 
     def generate_input_feature(self, image, patch_rect):
-        patch = image.clip(patch_rect)
-        if patch.shape[1] == self.patch_scale_h and patch.shape[0] == self.patch_scale_w:
+        patch = clip_image(image, patch_rect)
+        if patch.shape[0] == self.patch_scale_h and patch.shape[1] == self.patch_scale_w:
             feature = self.extractor.extract_feature(patch)
         else:
             patch_scaled = cv2.resize(patch, (self.patch_scale_w, self.patch_scale_h))
@@ -64,7 +72,8 @@ class TrainDataProvider(object):
         return feature
 
     def generate_label_response(self, response_size, patch_rect, gt_rect):
-        dx, dy = gt_rect.get_center() - patch_rect.get_center()
+        dx = gt_rect.get_center()[0] - patch_rect.get_center()[0]
+        dy = gt_rect.get_center()[1] - patch_rect.get_center()[1]
         _x_resolution = patch_rect.w / float(response_size[0])
         _y_resolution = patch_rect.h / float(response_size[1])
         dxi = math.floor(float(dx) / _x_resolution + 0.5)
@@ -81,6 +90,7 @@ class TrainDataProvider(object):
         _y1 = yv * yv / 2 / self.response_sigma_y / self.response_sigma_y
         _x1 = xv * xv / 2 / self.response_sigma_x / self.response_sigma_x
         response = np.exp(-(_y1 + _x1))
+        response[response < 1e-5] = 0.0
         return response
 
     def generate_train_data(self, image, gt_rect):
