@@ -49,29 +49,29 @@ def choose_seq(seqs, col=10):
     return seqs[sid]
 
 
-
 def _test_tracker():
     seqs = load_seq_infos()
-
+    show_fid = TestCfg.SHOW_TRACK_RESULT_FID
     trk = tracker.ConvRegTracker()
     while True:
-        seq = seqs[0]
-        # seq = choose_seq(seqs)
+        # seq = seqs[18]
+        seq = choose_seq(seqs)
         init = seq.gtRect[0]
         init_rect = Rect(*init)
         img_root = os.path.join(TestCfg.SEQUENCE_DIR, '../', seq.path)
         path = os.path.join(img_root,
                             seq.imgFormat.format(seq.startFrame))
         init_image = cv2.imread(path)
+        display.show_track_res(init_image, init_rect, init_rect, show_fid)
         trk.init(init_image, init_rect)
         for fid in range(1, len(seq.gtRect)):
             frame_id = fid + seq.startFrame
             path = os.path.join(img_root,
                                 seq.imgFormat.format(frame_id))
             image = cv2.imread(path)
-            gt_rect = seq.gtRect[fid]
+            gt_rect = Rect(*seq.gtRect[fid])
             pred_rect = trk.track(image)
-            display.show_track_res(image, gt_rect, pred_rect)
+            display.show_track_res(image, gt_rect, pred_rect, show_fid)
 
 
 

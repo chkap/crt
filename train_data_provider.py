@@ -6,6 +6,7 @@ import cv2
 import feature_extractor
 from config import TrainDataCfg
 from simgeo import Rect
+import display
 
 
 def clip_image(image,rect):
@@ -59,6 +60,10 @@ class TrainDataProvider(object):
             TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
         self.response_sigma_y = float(self.patch_scale_h) / self.extractor.get_resolution() * \
             TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
+        self.motion_sigma_x = float(self.patch_scale_w) * TrainDataCfg.MOTION_GAUSSIAN_SIGMA_RATIO
+        self.motion_sigma_y = float(self.patch_scale_h) * TrainDataCfg.MOTION_GAUSSIAN_SIGMA_RATIO
+
+        self._show_label_response_fid = TrainDataCfg.SHOW_LABEL_RESPONSE_FID
 
     def generate_input_feature(self, image, patch_rect):
         patch = clip_image(image, patch_rect)
@@ -74,23 +79,49 @@ class TrainDataProvider(object):
     def generate_label_response(self, response_size, patch_rect, gt_rect):
         dx = gt_rect.get_center()[0] - patch_rect.get_center()[0]
         dy = gt_rect.get_center()[1] - patch_rect.get_center()[1]
-        _x_resolution = patch_rect.w / float(response_size[0])
-        _y_resolution = patch_rect.h / float(response_size[1])
+        _x_resolution = patch_rect.w / float(response_size[1])
+        _y_resolution = patch_rect.h / float(response_size[0])
         dxi = math.floor(float(dx) / _x_resolution + 0.5)
         dyi = math.floor(float(dy) / _y_resolution + 0.5)
-        xi = int(dxi + response_size[0] / 2.0)
-        yi = int(dyi + response_size[1] / 2.0)
-        assert 0 <= xi < response_size[0] and 0 <= yi < response_size[1]
+        xi = int(dxi + response_size[1] / 2.0)
+        yi = int(dyi + response_size[0] / 2.0)
+        assert 0 <= xi < response_size[1] and 0 <= yi < response_size[0]
 
-        _x_index = np.arange(0, response_size[0])
-        _y_index = np.arange(0, response_size[1])
+        _x_index = np.arange(0, response_size[1])
+        _y_index = np.arange(0, response_size[0])
         yv, xv = np.meshgrid(_y_index, _x_index, indexing='ij')
         yv -= yi
         xv -= xi
         _y1 = yv * yv / 2 / self.response_sigma_y / self.response_sigma_y
         _x1 = xv * xv / 2 / self.response_sigma_x / self.response_sigma_x
         response = np.exp(-(_y1 + _x1))
-        response[response < 1e-5] = 0.0
+        # response[response < 1e-5] = 0.0
+        if self._show_label_response_fid:
+            display.show_map(response, self._show_label_response_fid)
+        return response
+
+    def generate_motion_map(self, response_size, patch_rect, last_obj_rect):
+        dx = last_obj_rect.get_center()[0] - patch_rect.get_center()[0]
+        dy = last_obj_rect.get_center()[1] - patch_rect.get_center()[1]
+        _x_resolution = patch_rect.w / float(response_size[1])
+        _y_resolution = patch_rect.h / float(response_size[0])
+        dxi = math.floor(float(dx) / _x_resolution + 0.5)
+        dyi = math.floor(float(dy) / _y_resolution + 0.5)
+        xi = int(dxi + response_size[1] / 2.0)
+        yi = int(dyi + response_size[0] / 2.0)
+        assert 0 <= xi < response_size[1] and 0 <= yi < response_size[0]
+
+        _x_index = np.arange(0, response_size[1])
+        _y_index = np.arange(0, response_size[0])
+        yv, xv = np.meshgrid(_y_index, _x_index, indexing='ij')
+        yv -= yi
+        xv -= xi
+        _y1 = yv * yv / 2 / self.motion_sigma_y / self.motion_sigma_y
+        _x1 = xv * xv / 2 / self.motion_sigma_x / self.motion_sigma_x
+        response = np.exp(-(_y1 + _x1))
+        # response[response < 1e-5] = 0.0
+        if self._show_label_response_fid:
+            display.show_map(response, self._show_label_response_fid)
         return response
 
     def generate_train_data(self, image, gt_rect):
@@ -124,7 +155,7 @@ class TrainDataProvider(object):
         return TrainData(patch, patch_rect, gt_rect.get_copy(), feature, response)
 
     def get_final_prediction(self, patch_rect, response_size, predict_index):
-        res_width, res_height = response_size
+        res_height, res_width = response_size
         _yi, _xi = predict_index
 
         _x_resolution = patch_rect.w / float(res_width)

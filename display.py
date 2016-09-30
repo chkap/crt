@@ -10,6 +10,7 @@ from simgeo import Rect
 
 plt.ion()
 
+
 def show_float_image(image,figure_id = 62346):
     image = np.asarray((image+0.5)*255.0,dtype=np.uint8)
     g,b,r = cv2.split(image)
@@ -20,25 +21,26 @@ def show_float_image(image,figure_id = 62346):
     plt.show()
 
 
-def show_map(map, figure_id=23467):
+def show_map(map, figure_id=0):
     plt.figure(figure_id)
     plt.clf()
     plt.imshow(map, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0), aspect='auto',interpolation='nearest')
     plt.colorbar()
     plt.show()
-    plt.pause(0.05)
+    plt.pause(0.01)
 
 
-def show_track_res(image,rect,gt_rect):
+def show_track_res(image, rect, gt_rect, fid):
     image = image.copy()
     cv2.rectangle(image,rect.get_tl(),rect.get_dr(),(0,0,255),2)
     cv2.rectangle(image,gt_rect.get_tl(),gt_rect.get_dr(),(255,0,0),2)
     g,b,r = cv2.split(image)
     image = cv2.merge((r,g,b))
-    plt.figure(63478)
+    plt.figure(fid)
     plt.cla()
     plt.imshow(image)
     plt.show()
+    plt.pause(0.01)
 
 
 def show_res(sec_image,obj_image,conf,out_conf,preprocess):

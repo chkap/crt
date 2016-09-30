@@ -6,6 +6,7 @@ import numpy as np
 from train_data_provider import TrainData, TrainDataProvider
 from config import ConvRegTrackerCfg
 from conv_reg import ConvRegression
+import display
 
 class TrackInfo(object):
 
@@ -21,8 +22,11 @@ class ConvRegTracker(object):
         self.data_provider = None
         self.conv_regression = None
         self.feature_extractor = ConvRegTrackerCfg.FEATURE_EXTRACTOR
-        self._train_max_step_num = ConvRegTrackerCfg.TRAIN_MAX_STEP_NUM
+        self._train_init_max_step_num = ConvRegTrackerCfg.TRAIN_INIT_MAX_STEP_NUM
+        self._train_update_max_step_num = ConvRegTrackerCfg.TRAIN_UPDATE_MAX_STEP_NUM
         self._train_loss_th = ConvRegTrackerCfg.TRAIN_LOSS_TH
+        self._show_final_response_fid = ConvRegTrackerCfg.SHOW_OVERALL_RESPONSE_FID
+        self._update_confidence_th = ConvRegTrackerCfg.UPDATE_CONFIDENCE_TH
         self._last_rect = None
 
         self._frame_no = None
@@ -40,7 +44,7 @@ class ConvRegTracker(object):
         patch_rect = init_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio,
                                                             self.data_provider.search_patch_ratio)
         feature = self.data_provider.generate_input_feature(image, patch_rect)
-        response_size = [feature.shape[1], feature.shape[0]]
+        response_size = [feature.shape[0], feature.shape[1]]
         response = self.data_provider.generate_label_response(response_size, patch_rect, init_rect)
 
         feature_height = feature.shape[0]
@@ -53,7 +57,10 @@ class ConvRegTracker(object):
 
         self.conv_regression = ConvRegression(feature[np.newaxis,:,:,:], conv_size)
 
-        self.conv_regression.train(feature, response, self._train_max_step_num, self._train_loss_th)
+        self.conv_regression.train(feature[np.newaxis,:,:,:],
+                                   response[np.newaxis,:,:,np.newaxis],
+                                   self._train_init_max_step_num,
+                                   self._train_loss_th)
 
         self._last_rect = init_rect
 
@@ -64,17 +71,34 @@ class ConvRegTracker(object):
         self._frame_no += 1
         last_rect = self._track_info_list[-1].obj_rect
 
-        patch_rect = last_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio)
+        patch_rect = last_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio,
+                                                            self.data_provider.search_patch_ratio)
         feature = self.data_provider.generate_input_feature(image, patch_rect)
-        pred_response = self.conv_regression.inference(feature[np.newaxis,:,:,:])
-        pred_index_y, pred_index_x = np.unravel_index(np.argmax(pred_response), pred_response.shape)
-        pred_response_size = [pred_response.shape[0], pred_response[1]]
+        pred_response = self.conv_regression.inference(feature[np.newaxis,:,:,:])[0,:,:,0]
+        pred_response_size = [pred_response.shape[0], pred_response.shape[1]]
+        motion_map = self.data_provider.generate_motion_map(pred_response_size,
+                                                            patch_rect,
+                                                            last_rect)
+        # display.show_map(motion_map, 'motion map')
+        overall_response = motion_map*pred_response
+        display.show_map(overall_response, self._show_final_response_fid)
+
+        tmp = np.unravel_index([np.argmax(overall_response),], overall_response.shape)
+        pred_index_y, pred_index_x = tmp[0][0], tmp[1][0]
+        confidence = min(1.0, overall_response[pred_index_y, pred_index_x])
+
         pred_rect = self.data_provider.get_final_prediction(patch_rect,
                                                             pred_response_size,
-                                                            [pred_index_x, pred_index_y])
+                                                            [pred_index_y, pred_index_x])
 
         label_response = self.data_provider.generate_label_response(pred_response_size, patch_rect, pred_rect)
-        self.conv_regression.train(feature[np.newaxis,:,:,:], label_response, 5)
+
+        if confidence > self._update_confidence_th:
+            _update_step = confidence * self._train_update_max_step_num
+            self.conv_regression.train(feature[np.newaxis,:,:,:],
+                                       label_response[np.newaxis,:,:,np.newaxis],
+                                       _update_step,
+                                       self._train_loss_th)
 
         track_info = TrackInfo(patch_rect, feature, pred_rect)
         self._track_info_list.append(track_info)
