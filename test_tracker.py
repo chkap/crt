@@ -3,7 +3,7 @@ import json
 
 import cv2
 
-from config import TestCfg
+from conv_reg_config import TestCfg
 from simgeo import Rect
 import tracker
 import display

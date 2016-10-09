@@ -1,7 +1,7 @@
 from collections import OrderedDict
-from config import *
 
 ##########################################################
+
 
 class Sequence:
 

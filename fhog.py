@@ -107,8 +107,7 @@ def _get_cell_hist(pixel_hist, cw=4,ch=4):
             weight_neighbors = np.reshape(weight_neighbors,(weight_neighbors.shape[0]*weight_neighbors.shape[1],hist_bin))
             cell_hist[j,i,:] = np.sum(weight_neighbors,axis=0)
 
-
-    norm_tmp = cell_hist[:,:,0:hist_bin/2]+cell_hist[:,:,hist_bin/2:hist_bin]
+    norm_tmp = cell_hist[:,:,0:int(hist_bin/2)]+cell_hist[:,:,int(hist_bin/2):hist_bin]
     cell_norm = (norm_tmp*norm_tmp).sum(axis=2)
     return cell_hist,cell_norm
 

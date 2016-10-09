@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 import feature_extractor
-from config import TrainDataCfg
+from conv_reg_config import TrainDataCfg
 from simgeo import Rect
 import display
 

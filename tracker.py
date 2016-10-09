@@ -4,9 +4,10 @@ import numpy as np
 
 
 from train_data_provider import TrainData, TrainDataProvider
-from config import ConvRegTrackerCfg
+from conv_reg_config import ConvRegTrackerCfg
 from conv_reg import ConvRegression
 import display
+
 
 class TrackInfo(object):
 
@@ -81,7 +82,8 @@ class ConvRegTracker(object):
                                                             last_rect)
         # display.show_map(motion_map, 'motion map')
         overall_response = motion_map*pred_response
-        display.show_map(overall_response, self._show_final_response_fid)
+        if self._show_final_response_fid:
+            display.show_map(overall_response, self._show_final_response_fid)
 
         tmp = np.unravel_index([np.argmax(overall_response),], overall_response.shape)
         pred_index_y, pred_index_x = tmp[0][0], tmp[1][0]
