@@ -12,7 +12,7 @@ class TrainDataCfg(object):
 
 class FhogCfg(object):
     CELL_SIZE = 4
-    BIN_NUM = 7
+    BIN_NUM = 9
 
 
 class ConvRegressionCfg(object):
@@ -23,7 +23,7 @@ class ConvRegressionCfg(object):
     LOSS_WEIGHT_B = 3
     LOSS_THRESHOLD = 0.03
     VERBOSE = True
-    SHOW_RESPONSE_FID = ''  # 'output_response'
+    SHOW_RESPONSE_FID = 'output_response'  # 'output_response'
     SHOW_STEP = 20
 
 
@@ -32,7 +32,7 @@ class ConvRegTrackerCfg(object):
     TRAIN_LOSS_TH = 0.1
     TRAIN_INIT_MAX_STEP_NUM = 2000
     TRAIN_UPDATE_MAX_STEP_NUM = 30
-    SHOW_OVERALL_RESPONSE_FID = ''  # 'final response'
+    SHOW_OVERALL_RESPONSE_FID = 'final response'  # 'final response'
     UPDATE_CONFIDENCE_TH = 0.5
 
 

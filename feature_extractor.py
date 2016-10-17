@@ -1,6 +1,7 @@
 
 import cv2
-import fhog
+import fhog_feature
+import numpy as np
 import conv_reg_config
 
 
@@ -47,6 +48,9 @@ class FhogExtractor(FeatureExtractor):
         self._channel_num = 3*self.bin_num + 4
 
     def extract_feature(self, input_image):
-        return fhog.get_fhog(input_image, self.cell_size, self.bin_num)
+        assert input_image.shape[2] == 3
+        im = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+        im = np.asarray(im, dtype=np.float32)
+        return fhog_feature.extract(im, bin_size=self.cell_size, n_orients=self.bin_num)
 
 

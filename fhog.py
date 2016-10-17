@@ -8,6 +8,7 @@ import cv2
 
 _orientation_vector = None
 
+
 def _prepare_orientation_vector(orientation_bin):
     global _orientation_vector
 
@@ -59,6 +60,7 @@ def _get_gradient(im):
     # plt.imshow(dxy[:,:,1])
     return mag,dxy
 
+
 def _get_histogram(mag,dxy,bin):
     ov = _prepare_orientation_vector(bin)
     dot = dxy[:,:,np.newaxis,:]*ov[np.newaxis,np.newaxis,:,:]
@@ -71,6 +73,7 @@ def _get_histogram(mag,dxy,bin):
     row_ind = np.arange(0,w)
     hist[col_ind[:,np.newaxis],row_ind,max_orientation] = mag
     return hist
+
 
 def _get_cell_hist(pixel_hist, cw=4,ch=4):
     w = pixel_hist.shape[1]
@@ -176,21 +179,28 @@ def get_fhog(im, cell_size, bin):
 
 
 def test():
-    im_path = 'E:\\test.jpg'
-    im = cv2.imread(im_path)
+    # im_path = 'E:\\test.jpg'
+    # im = cv2.imread(im_path)
+    im = np.zeros((500,500,3), dtype=np.uint8)
+    im = cv2.circle(im, (250,250), 200, (255,255,255), thickness=8)
+    im = cv2.rectangle(im, (150,150), (350,350), (255,0,0), thickness=8)
     plt.figure()
     plt.imshow(im)
 
     im = np.asarray(im,np.float)
-    fhog = get_fhog(im,4,9)
+    fhog = get_fhog(im,4,5)
     for i in range(fhog.shape[2]):
         plt.figure()
         plt.imshow(fhog[:,:,i])
         plt.colorbar()
         plt.title('channel:%d'%i)
-    plt.show()
+        plt.savefig('./tmp/channel_{:d}.jpg'.format(i))
+        plt.show()
+        plt.pause(0.2)
+        plt.close()
 
 if __name__ == '__main__':
+    plt.ion()
     test()
 
 
