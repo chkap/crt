@@ -48,7 +48,7 @@ class ConvRegression(object):
         with self.graph.as_default():
             _input_shape = (None, input_size[1], input_size[2], input_size[3])
             self._input_holder = tf.placeholder(tf.float32, _input_shape, name='input_feature')
-            _output_shape = (None, input_size[1], input_size[2], 1)
+            _output_shape = (None, input_size[1]-conv_size[0]+1, input_size[2]-conv_size[1]+1, 1)
             self._response_holder = tf.placeholder(tf.float32, _output_shape, name='label_response')
             self._global_step = tf.Variable(0, trainable=False, name='global_step')
 
@@ -60,7 +60,7 @@ class ConvRegression(object):
             self._weight = tf.Variable(_weight_init, name='conv_weight')
             self._bias = tf.Variable(0.0, name='conv_bias')
 
-            _conv_out = tf.nn.conv2d(self._input_holder, self._weight, [1, 1, 1, 1], 'SAME')
+            _conv_out = tf.nn.conv2d(self._input_holder, self._weight, [1, 1, 1, 1], 'VALID')
             self._output_response = tf.add(_conv_out, self._bias)
 
             _weight_map = self._loss_weight_a * tf.exp(self._loss_weight_b*self._response_holder)

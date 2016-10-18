@@ -7,6 +7,7 @@ from train_data_provider import TrainData, TrainDataProvider
 from conv_reg_config import ConvRegTrackerCfg
 from conv_reg import ConvRegression
 import display
+import feature_extractor
 
 
 class TrackInfo(object):
@@ -22,7 +23,7 @@ class ConvRegTracker(object):
     def __init__(self):
         self.data_provider = None
         self.conv_regression = None
-        self.feature_extractor = ConvRegTrackerCfg.FEATURE_EXTRACTOR
+        self.feature_extractor = feature_extractor.FhogCnExtractor
         self._train_init_max_step_num = ConvRegTrackerCfg.TRAIN_INIT_MAX_STEP_NUM
         self._train_update_max_step_num = ConvRegTrackerCfg.TRAIN_UPDATE_MAX_STEP_NUM
         self._train_loss_th = ConvRegTrackerCfg.TRAIN_LOSS_TH
@@ -45,16 +46,18 @@ class ConvRegTracker(object):
         patch_rect = init_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio,
                                                             self.data_provider.search_patch_ratio)
         feature = self.data_provider.generate_input_feature(image, patch_rect)
-        response_size = [feature.shape[0], feature.shape[1]]
-        response = self.data_provider.generate_label_response(response_size, patch_rect, init_rect)
-
+        assert feature.shape[0] == self.data_provider.feature_size_h and \
+            feature.shape[1] == self.data_provider.feature_size_w
         feature_height = feature.shape[0]
         feature_width = feature.shape[1]
         conv_height = int(feature_height / self.data_provider.search_patch_ratio + 0.5)
         conv_width = int(feature_width / self.data_provider.search_patch_ratio + 0.5)
-        assert abs(conv_height*self.data_provider.search_patch_ratio - feature_height) < 1 and \
-            abs(conv_width*self.data_provider.search_patch_ratio - feature_width) < 1
+        assert abs(conv_height * self.data_provider.search_patch_ratio - feature_height) < 1 and \
+               abs(conv_width * self.data_provider.search_patch_ratio - feature_width) < 1
         conv_size = [conv_height, conv_width]
+
+        response_size = [feature.shape[0]-conv_height+1, feature.shape[1]-conv_width+1]
+        response = self.data_provider.generate_label_response(response_size, patch_rect, init_rect)
 
         self.conv_regression = ConvRegression(feature[np.newaxis,:,:,:], conv_size)
 
@@ -82,6 +85,7 @@ class ConvRegTracker(object):
                                                             last_rect)
         # display.show_map(motion_map, 'motion map')
         overall_response = motion_map*pred_response
+        # overall_response = pred_response
         if self._show_final_response_fid:
             display.show_map(overall_response, self._show_final_response_fid)
 

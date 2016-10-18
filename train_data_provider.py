@@ -60,17 +60,16 @@ class TrainDataProvider(object):
         print('\tObject rescaled: width: {:d} height: {:d}, scale: {:f}'.format(self.patch_scale_w,
                                                                                 self.patch_scale_h,
                                                                                 _scale))
-        self.feature_size_w = self.patch_scale_w / self.extractor.get_resolution()
-        self.feature_size_h = self.patch_scale_h / self.extractor.get_resolution()
+        self.feature_size_w = round(self.patch_scale_w / self.extractor.get_resolution())
+        self.feature_size_h = round(self.patch_scale_h / self.extractor.get_resolution())
 
-        self.response_sigma_x = float(self.patch_scale_w) / self.extractor.get_resolution() * \
-            TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
-        self.response_sigma_y = float(self.patch_scale_h) / self.extractor.get_resolution() * \
-            TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
-        self.motion_sigma_x = float(self.patch_scale_w) * TrainDataCfg.MOTION_GAUSSIAN_SIGMA_RATIO
-        self.motion_sigma_y = float(self.patch_scale_h) * TrainDataCfg.MOTION_GAUSSIAN_SIGMA_RATIO
+        self.response_sigma_x = self.feature_size_w * TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
+        self.response_sigma_y = self.feature_size_h * TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO
+        self.motion_sigma_x = self.feature_size_w * TrainDataCfg.MOTION_GAUSSIAN_SIGMA_RATIO
+        self.motion_sigma_y = self.feature_size_h * TrainDataCfg.MOTION_GAUSSIAN_SIGMA_RATIO
 
         self._show_label_response_fid = TrainDataCfg.SHOW_LABEL_RESPONSE_FID
+        self._show_motion_map_fid = TrainDataCfg.SHOW_MOTION_MAP_FID
 
     def generate_input_feature(self, image, patch_rect):
         patch = clip_image(image, patch_rect)
@@ -84,14 +83,15 @@ class TrainDataProvider(object):
         return feature
 
     def generate_label_response(self, response_size, patch_rect, gt_rect):
+        # response_size -> (h, w)
         dx = gt_rect.get_center()[0] - patch_rect.get_center()[0]
         dy = gt_rect.get_center()[1] - patch_rect.get_center()[1]
-        _x_resolution = patch_rect.w / float(response_size[1])
-        _y_resolution = patch_rect.h / float(response_size[0])
-        dxi = math.floor(float(dx) / _x_resolution + 0.5)
-        dyi = math.floor(float(dy) / _y_resolution + 0.5)
-        xi = int(dxi + response_size[1] / 2.0)
-        yi = int(dyi + response_size[0] / 2.0)
+        _x_resolution = patch_rect.w / float(self.feature_size_w)
+        _y_resolution = patch_rect.h / float(self.feature_size_h)
+        dxi = round(float(dx) / _x_resolution)
+        dyi = round(float(dy) / _y_resolution)
+        xi = dxi + int((response_size[1]-1) / 2.0)
+        yi = dyi + int((response_size[0]-1) / 2.0)
         assert 0 <= xi < response_size[1] and 0 <= yi < response_size[0]
 
         _x_index = np.arange(0, response_size[1])
@@ -110,12 +110,12 @@ class TrainDataProvider(object):
     def generate_motion_map(self, response_size, patch_rect, last_obj_rect):
         dx = last_obj_rect.get_center()[0] - patch_rect.get_center()[0]
         dy = last_obj_rect.get_center()[1] - patch_rect.get_center()[1]
-        _x_resolution = patch_rect.w / float(response_size[1])
-        _y_resolution = patch_rect.h / float(response_size[0])
-        dxi = math.floor(float(dx) / _x_resolution + 0.5)
-        dyi = math.floor(float(dy) / _y_resolution + 0.5)
-        xi = int(dxi + response_size[1] / 2.0)
-        yi = int(dyi + response_size[0] / 2.0)
+        _x_resolution = patch_rect.w / self.feature_size_w
+        _y_resolution = patch_rect.h / self.feature_size_h
+        dxi = round(float(dx) / _x_resolution)
+        dyi = round(float(dy) / _y_resolution)
+        xi = dxi + int((response_size[1]-1) / 2.0)
+        yi = dyi + int((response_size[0]-1) / 2.0)
         assert 0 <= xi < response_size[1] and 0 <= yi < response_size[0]
 
         _x_index = np.arange(0, response_size[1])
@@ -127,56 +127,69 @@ class TrainDataProvider(object):
         _x1 = xv * xv / 2 / self.motion_sigma_x / self.motion_sigma_x
         response = np.exp(-(_y1 + _x1))
         # response[response < 1e-5] = 0.0
-        if self._show_label_response_fid:
-            display.show_map(response, self._show_label_response_fid)
+        if self._show_motion_map_fid:
+            display.show_map(response, self._show_motion_map_fid)
         return response
 
-    def generate_train_data(self, image, gt_rect):
-        patch_rect = gt_rect.get_copy().scale_from_center(self.search_patch_ratio)
-        patch = image.clip(patch_rect)
-        if patch.shape[1] == self.patch_scale_h and patch.shape[0] == self.patch_scale_w:
-            feature = self.extractor.extract_feature(patch)
-        else:
-            patch_scaled = cv2.resize(patch, (self.patch_scale_w, self.patch_scale_h))
-            feature = self.extractor.extract_feature(patch_scaled)
-        assert feature.shape[2] == self.extractor.get_channel_num()
-
-        dx, dy = gt_rect.get_center() - patch_rect.get_center()
-        _x_resolution = patch.shape[1] / float(feature.shape[1])
-        _y_resolution = patch.shape[0] / float(feature.shape[0])
-        dxi = math.floor(float(dx)/_x_resolution + 0.5)
-        dyi = math.floor(float(dy)/_y_resolution + 0.5)
-        xi = int(dxi + feature.shape[1] / 2.0)
-        yi = int(dyi + feature.shape[0] / 2.0)
-        assert 0 <= xi < feature.shape[0] and 0 <= yi < feature.shape[1]
-
-        _x_index = np.arange(0, feature.shape[1])
-        _y_index = np.arange(0, feature.shape[0])
-        yv, xv = np.meshgrid(_y_index, _x_index, indexing='ij')
-        yv -= yi
-        xv -= xi
-        _y1 = yv*yv/2/self.response_sigma_y/self.response_sigma_y
-        _x1 = xv*xv/2/self.response_sigma_x/self.response_sigma_x
-        response = np.exp(-(_y1+_x1))
-
-        return TrainData(patch, patch_rect, gt_rect.get_copy(), feature, response)
+    # def generate_train_data(self, image, gt_rect):
+    #     patch_rect = gt_rect.get_copy().scale_from_center(self.search_patch_ratio)
+    #     patch = image.clip(patch_rect)
+    #     if patch.shape[1] == self.patch_scale_h and patch.shape[0] == self.patch_scale_w:
+    #         feature = self.extractor.extract_feature(patch)
+    #     else:
+    #         patch_scaled = cv2.resize(patch, (self.patch_scale_w, self.patch_scale_h))
+    #         feature = self.extractor.extract_feature(patch_scaled)
+    #     assert feature.shape[2] == self.extractor.get_channel_num()
+    #
+    #     dx, dy = gt_rect.get_center() - patch_rect.get_center()
+    #     _x_resolution = patch.shape[1] / float(feature.shape[1])
+    #     _y_resolution = patch.shape[0] / float(feature.shape[0])
+    #     dxi = math.floor(float(dx)/_x_resolution + 0.5)
+    #     dyi = math.floor(float(dy)/_y_resolution + 0.5)
+    #     xi = int(dxi + feature.shape[1] / 2.0)
+    #     yi = int(dyi + feature.shape[0] / 2.0)
+    #     assert 0 <= xi < feature.shape[0] and 0 <= yi < feature.shape[1]
+    #
+    #     _x_index = np.arange(0, feature.shape[1])
+    #     _y_index = np.arange(0, feature.shape[0])
+    #     yv, xv = np.meshgrid(_y_index, _x_index, indexing='ij')
+    #     yv -= yi
+    #     xv -= xi
+    #     _y1 = yv*yv/2/self.response_sigma_y/self.response_sigma_y
+    #     _x1 = xv*xv/2/self.response_sigma_x/self.response_sigma_x
+    #     response = np.exp(-(_y1+_x1))
+    #
+    #     return TrainData(patch, patch_rect, gt_rect.get_copy(), feature, response)
 
     def get_final_prediction(self, patch_rect, response_size, predict_index):
+        # response_size: (h, w)  predict_index ( yi, xi)
         res_height, res_width = response_size
         _yi, _xi = predict_index
 
-        _x_resolution = patch_rect.w / float(res_width)
-        _y_resolution = patch_rect.h / float(res_height)
+        _x_resolution = patch_rect.w / float(self.feature_size_w)
+        _y_resolution = patch_rect.h / float(self.feature_size_h)
 
-        _dyi = _yi - int(res_height / 2.0)
-        _dxi = _xi - int(res_width / 2.0)
+        _dyi = _yi - int((res_height-1) / 2.0)
+        _dxi = _xi - int((res_width-1) / 2.0)
 
         patch_cx, patch_cy = patch_rect.get_center()
         pd_cx, pd_cy = patch_cx + _dxi*_x_resolution, patch_cy + _dyi*_y_resolution
         pd_w, pd_h = int(patch_rect.w/self.search_patch_ratio), int(patch_rect.h/self.search_patch_ratio)
 
-        pd_tlx = int(pd_cx - pd_w/2.0 + 0.5)
-        pd_tly = int(pd_cy - pd_h/2.0 + 0.5)
+        pd_tlx = round(pd_cx - (pd_w-1)/2.0)
+        pd_tly = round(pd_cy - (pd_h-1)/2.0)
 
         final_rect = Rect(pd_tlx, pd_tly, pd_w, pd_h)
         return final_rect
+
+
+def _test_data_provider():
+    patch_rect = Rect(0,0, 500, 500)
+    gt_rect = Rect(152, 134, 42, 120)
+    response_size = (32, 32)
+
+
+
+
+if __name__ == '__main__':
+    _test_data_provider()
