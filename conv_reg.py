@@ -61,7 +61,7 @@ class ConvRegression(object):
             self._bias = tf.Variable(0.0, name='conv_bias')
 
             _conv_out = tf.nn.conv2d(self._input_holder, self._weight, [1, 1, 1, 1], 'SAME')
-            self._output_response = tf.nn.relu(tf.add(_conv_out, self._bias))
+            self._output_response = tf.add(_conv_out, self._bias)
 
             _weight_map = self._loss_weight_a * tf.exp(self._loss_weight_b*self._response_holder)
             _diff_map = self._output_response - self._response_holder
@@ -111,8 +111,8 @@ class ConvRegression(object):
             if total_loss < loss_th:
                 break
             i += 1
-        if i >= max_step_num:
-            print('Warning, total_loss larger than loss_th even after {:d}steps'.format(i))
+        # if i >= max_step_num:
+        #     print('Warning, total_loss larger than loss_th even after {:d}steps'.format(i))
 
     def inference(self, features):
         feed_dict = {self._input_holder: features}

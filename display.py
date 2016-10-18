@@ -30,7 +30,7 @@ def show_map(map, figure_id=0):
     plt.pause(0.01)
 
 
-def show_track_res(image, rect, gt_rect, fid):
+def show_track_res(frame_id, image, rect, gt_rect, fid):
     image = image.copy()
     cv2.rectangle(image,rect.get_tl(),rect.get_dr(),(0,0,255),2)
     cv2.rectangle(image,gt_rect.get_tl(),gt_rect.get_dr(),(255,0,0),2)
@@ -39,6 +39,7 @@ def show_track_res(image, rect, gt_rect, fid):
     plt.figure(fid)
     plt.cla()
     plt.imshow(image)
+    plt.title('fid:{:4d}'.format(frame_id))
     plt.show()
     plt.pause(0.01)
 

@@ -46,15 +46,22 @@ class TrainDataProvider(object):
         self.extractor = self.extractor_class()
         self.search_patch_ratio = TrainDataCfg.SEARCH_PATCH_RATIO
         _size = math.sqrt(init_rect.w * init_rect.h)
-        if _size > TrainDataCfg.OBJECT_RESIZE_TH:
-            _scale = TrainDataCfg.OBJECT_RESIZE_TH / float(_size)
-        else:
-            _scale = 1.0
+        # if _size > TrainDataCfg.OBJECT_RESIZE_TH:
+        #     _scale = TrainDataCfg.OBJECT_RESIZE_TH / float(_size)
+        #     print('\tobject will be resized with scale ratio: {:f}'.format(_scale))
+        # else:
+        #     _scale = 1.0
+        _scale = TrainDataCfg.OBJECT_RESIZE_TH / float(_size)
         scale_w = init_rect.w * _scale * self.search_patch_ratio
         scale_h = init_rect.h * _scale * self.search_patch_ratio
         _tmp = self.search_patch_ratio*self.extractor.get_resolution()
         self.patch_scale_w = int(int(scale_w / float(_tmp) + 0.5) * _tmp)
         self.patch_scale_h = int(int(scale_h / float(_tmp) + 0.5) * _tmp)
+        print('\tObject rescaled: width: {:d} height: {:d}, scale: {:f}'.format(self.patch_scale_w,
+                                                                                self.patch_scale_h,
+                                                                                _scale))
+        self.feature_size_w = self.patch_scale_w / self.extractor.get_resolution()
+        self.feature_size_h = self.patch_scale_h / self.extractor.get_resolution()
 
         self.response_sigma_x = float(self.patch_scale_w) / self.extractor.get_resolution() * \
             TrainDataCfg.RESPONSE_GAUSSIAN_SIGMA_RATIO

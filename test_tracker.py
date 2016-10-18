@@ -2,6 +2,9 @@ import os
 import json
 
 import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 from conv_reg_config import TestCfg
 from simgeo import Rect
@@ -51,6 +54,7 @@ def choose_seq(seqs, col=10):
 
 def _test_tracker():
     seqs = load_seq_infos()
+    seqs.sort(key= lambda o: o.name)
     show_fid = TestCfg.SHOW_TRACK_RESULT_FID
     trk = tracker.ConvRegTracker()
     while True:
@@ -62,7 +66,7 @@ def _test_tracker():
         path = os.path.join(img_root,
                             seq.imgFormat.format(seq.startFrame))
         init_image = cv2.imread(path)
-        display.show_track_res(init_image, init_rect, init_rect, show_fid)
+        display.show_track_res(seq.startFrame, init_image, init_rect, init_rect, show_fid)
         trk.init(init_image, init_rect)
         for fid in range(1, len(seq.gtRect)):
             frame_id = fid + seq.startFrame
@@ -71,10 +75,28 @@ def _test_tracker():
             image = cv2.imread(path)
             gt_rect = Rect(*seq.gtRect[fid])
             pred_rect = trk.track(image)
-            display.show_track_res(image, gt_rect, pred_rect, show_fid)
+            display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
 
 
+def _test_init_size():
+    seqs = load_seq_infos()
+    img = np.zeros((400,400,3), np.uint8)
+    ws, hs = 0.0, 0.0
+    for seq in seqs:
+        w = seq.gtRect[0][2]
+        h = seq.gtRect[0][3]
+        ws += w
+        hs += h
+        cv2.circle(img, (w,h), 3, (0,255,0))
+
+    cw = round(ws/len(seqs))
+    ch = round(hs/len(seqs))
+    cv2.circle(img, (cw,ch), 5, (0,0,255), thickness=2)
+    plt.figure()
+    plt.imshow(img)
+    plt.show()
+    plt.waitforbuttonpress()
 
 if __name__ == '__main__':
     _test_tracker()
-
+    # _test_init_size()
