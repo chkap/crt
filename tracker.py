@@ -102,10 +102,10 @@ class ConvRegTracker(object):
 
         if confidence > self._update_confidence_th:
             _update_step = confidence * self._train_update_max_step_num
-            self.conv_regression.train(feature[np.newaxis,:,:,:],
-                                       label_response[np.newaxis,:,:,np.newaxis],
-                                       _update_step,
-                                       self._train_loss_th)
+            self.conv_regression.update(feature[np.newaxis,:,:,:],
+                                        label_response[np.newaxis,:,:,np.newaxis],
+                                        _update_step,
+                                        self._train_loss_th)
 
         track_info = TrackInfo(patch_rect, feature, pred_rect)
         self._track_info_list.append(track_info)

@@ -13,7 +13,7 @@ import display
 from sequence import Sequence
 
 
-def load_seq_infos():
+def load_seq_infos(seq_size=-1):
     seq_root = TestCfg.SEQUENCE_DIR
     seq_list = []
     for item in os.listdir(seq_root):
@@ -24,6 +24,8 @@ def load_seq_infos():
                 seq = json.load(json_fp)
                 seq = Sequence(**seq)
             seq_list.append(seq)
+            if seq_size >= 0 and len(seq_list) >= seq_size:
+                break
     print('{:d} sequences loaded!'.format(len(seq_list)))
     return seq_list
 
@@ -78,8 +80,26 @@ def _test_tracker():
             display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
 
 def _test_traindata_provider():
-    seqs = load_seq_infos()
-    seq = seqs[23]
+    seqs = load_seq_infos(1)
+    seq = seqs[0]
+    show_fid = TestCfg.SHOW_TRACK_RESULT_FID
+    trk = tracker.ConvRegTracker()
+    init = seq.gtRect[0]
+    init_rect = Rect(*init)
+    img_root = os.path.join(TestCfg.SEQUENCE_DIR, '../', seq.path)
+    path = os.path.join(img_root,
+                        seq.imgFormat.format(seq.startFrame))
+    init_image = cv2.imread(path)
+    display.show_track_res(seq.startFrame, init_image, init_rect, init_rect, show_fid)
+    trk.init(init_image, init_rect)
+    while True:
+        frame_id = seq.startFrame
+        path = os.path.join(img_root,
+                            seq.imgFormat.format(frame_id))
+        image = cv2.imread(path)
+        gt_rect = Rect(*seq.gtRect[0])
+        pred_rect = trk.track(image)
+        display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
 
 
 
@@ -105,3 +125,4 @@ def _test_init_size():
 if __name__ == '__main__':
     _test_tracker()
     # _test_init_size()
+    # _test_traindata_provider()

@@ -13,6 +13,7 @@ class ConvRegression(object):
     def __init__(self, init_features, conv_size):
         self._regularization_coef = ConvRegressionCfg.REGULARIZATION_COEF
         self._learning_rate = ConvRegressionCfg.SGD_LEARNING_RATE
+        self._update_learning_rate = ConvRegressionCfg.SGD_UPDATE_LEARNING_RATE
         self._momentum = ConvRegressionCfg.SGD_MOMENTUM
         self._verbose = ConvRegressionCfg.VERBOSE
         self._global_step = None
@@ -30,6 +31,9 @@ class ConvRegression(object):
         self._pred_loss = None
         self._regu_loss = None
         self._total_loss = None
+
+        self._init_train_op = None
+        self._update_train_op = None
 
         self._pred_loss_list = list()
         self._regu_loss_list = list()
@@ -74,7 +78,9 @@ class ConvRegression(object):
                               (tf.reduce_sum(self._weight*self._weight) + tf.mul(self._bias, self._bias))
             self._total_loss = self._pred_loss + self._regu_loss
 
-            self._train_op = tf.train.AdamOptimizer(self._learning_rate) \
+            self._init_train_op = tf.train.AdamOptimizer(self._learning_rate) \
+                .minimize(self._total_loss, global_step=self._global_step)
+            self._update_train_op = tf.train.AdamOptimizer(self._update_learning_rate) \
                 .minimize(self._total_loss, global_step=self._global_step)
             self.session = tf.Session(graph=self.graph)
             self.session.run(tf.initialize_all_variables())
@@ -94,7 +100,7 @@ class ConvRegression(object):
         i = 0
         while i < max_step_num:
             if self._verbose:
-                fetches = [self._train_op, self._pred_loss, self._regu_loss, self._total_loss, self._weight,
+                fetches = [self._init_train_op, self._pred_loss, self._regu_loss, self._total_loss, self._weight,
                            self._bias, self._output_response, self._global_step]
                 _, pred_loss, regu_loss, total_loss, weight, bias, res, step = self.session.run(fetches, feed_dict=feed_dict)
                 print('step:{:5d}, pred_loss:{:.4e}, regu_loss: {:.4e}, total_loss:{:.4e}'.format(step,
@@ -107,7 +113,33 @@ class ConvRegression(object):
                 if step % self._show_step == 0 and self._show_response_fid:
                     display.show_map(res[0,:,:,0], self._show_response_fid)
             else:
-                _, total_loss = self.session.run((self._train_op, self._total_loss), feed_dict=feed_dict)
+                _, total_loss = self.session.run((self._init_train_op, self._total_loss), feed_dict=feed_dict)
+            if total_loss < loss_th:
+                break
+            i += 1
+        # if i >= max_step_num:
+        #     print('Warning, total_loss larger than loss_th even after {:d}steps'.format(i))
+
+    def update(self, features, response, max_step_num, loss_th):
+        feed_dict = {self._input_holder: features,
+                     self._response_holder: response}
+        i = 0
+        while i < max_step_num:
+            if self._verbose:
+                fetches = [self._update_train_op, self._pred_loss, self._regu_loss, self._total_loss, self._weight,
+                           self._bias, self._output_response, self._global_step]
+                _, pred_loss, regu_loss, total_loss, weight, bias, res, step = self.session.run(fetches, feed_dict=feed_dict)
+                print('step:{:5d}, pred_loss:{:.4e}, regu_loss: {:.4e}, total_loss:{:.4e}'.format(step,
+                                                                                                  pred_loss,
+                                                                                                  regu_loss,
+                                                                                                  total_loss))
+                self._pred_loss_list.append(pred_loss)
+                self._regu_loss_list.append(regu_loss)
+                self._total_loss_list.append(total_loss)
+                if step % self._show_step == 0 and self._show_response_fid:
+                    display.show_map(res[0,:,:,0], self._show_response_fid)
+            else:
+                _, total_loss = self.session.run((self._update_train_op, self._total_loss), feed_dict=feed_dict)
             if total_loss < loss_th:
                 break
             i += 1
