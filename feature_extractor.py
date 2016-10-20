@@ -54,6 +54,7 @@ class FhogExtractor(FeatureExtractor):
         im = np.asarray(im, dtype=np.float32)
         return fhog_feature.extract(im, bin_size=self.cell_size, n_orients=self.bin_num)
 
+
 class FhogCnExtractor(FeatureExtractor):
 
     def __init__(self):

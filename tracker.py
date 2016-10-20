@@ -8,6 +8,7 @@ from conv_reg_config import ConvRegTrackerCfg
 from conv_reg import ConvRegression
 import display
 import feature_extractor
+import cnn_feature_extractor
 
 
 class TrackInfo(object):
@@ -23,7 +24,7 @@ class ConvRegTracker(object):
     def __init__(self):
         self.data_provider = None
         self.conv_regression = None
-        self.feature_extractor = feature_extractor.FhogCnExtractor
+        self.feature_extractor = cnn_feature_extractor.VggL1Extractor
         self._train_init_max_step_num = ConvRegTrackerCfg.TRAIN_INIT_MAX_STEP_NUM
         self._train_update_max_step_num = ConvRegTrackerCfg.TRAIN_UPDATE_MAX_STEP_NUM
         self._train_loss_th = ConvRegTrackerCfg.TRAIN_LOSS_TH
