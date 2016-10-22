@@ -24,18 +24,18 @@ class ConvRegressionCfg(object):
     SGD_UPDATE_LEARNING_RATE = 1e-9
     SGD_MOMENTUM = 0.0
     LOSS_WEIGHT_A = 0.1
-    LOSS_WEIGHT_B = 3
-    LOSS_THRESHOLD = 0.03
+    LOSS_WEIGHT_B = 1
+    LOSS_THRESHOLD = 0.01
     VERBOSE = False
     SHOW_RESPONSE_FID = 'output_response'
     SHOW_STEP = 20
 
 
 class ConvRegTrackerCfg(object):
-    TRAIN_LOSS_TH = 0.05
+    TRAIN_LOSS_TH = 0.01
     TRAIN_INIT_MAX_STEP_NUM = 4000
-    TRAIN_UPDATE_MAX_STEP_NUM = 3
-    SHOW_OVERALL_RESPONSE_FID = 'final response'
+    TRAIN_UPDATE_MAX_STEP_NUM = 15
+    SHOW_OVERALL_RESPONSE_FID = '' # 'final response'
     UPDATE_CONFIDENCE_TH = 0.3
 
 
