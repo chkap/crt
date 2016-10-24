@@ -79,6 +79,7 @@ def _test_tracker():
             pred_rect = trk.track(image)
             display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
 
+
 def _test_traindata_provider():
     seqs = load_seq_infos(1)
     seq = seqs[0]

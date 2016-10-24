@@ -14,7 +14,7 @@ class VggL1Extractor(FeatureExtractor):
         self._feature_width = 0
         self._feature_height = 0
         self._output_channel_size = 64
-        self._resolution = 1
+        self._resolution = 4
 
         self._graph = None
         self._session = None
@@ -46,13 +46,15 @@ class VggL1Extractor(FeatureExtractor):
             _conv_11_b = tf.Variable(self._conv_data_11_bias)
             _conv_11_output = tf.nn.conv2d(_sub_mean, _conv_11_w, [1,1,1,1], padding='SAME') + _conv_11_b
             _conv_11_act = tf.nn.relu(_conv_11_output)
+            _max_pool_11_output = tf.nn.max_pool(_conv_11_act, (1,2,2,1), (1,2,2,1), padding='SAME')
 
             _conv_12_w = tf.Variable(self._conv_data_12_weights)
             _conv_12_b = tf.Variable(self._conv_data_12_bias)
-            _conv_12_output = tf.nn.conv2d(_conv_11_act, _conv_12_w, [1,1,1,1], padding='SAME') + _conv_12_b
+            _conv_12_output = tf.nn.conv2d(_max_pool_11_output, _conv_12_w, [1,1,1,1], padding='SAME') + _conv_12_b
             _conv_12_act = tf.nn.relu(_conv_12_output)
+            _max_pool_12_output = tf.nn.max_pool(_conv_12_act, (1,2,2,1), (1,2,2,1), padding='SAME')
 
-            self._output_feature = _conv_12_act
+            self._output_feature = _max_pool_12_output
             self._session = tf.Session(graph=self._graph)
             self._session.run(tf.initialize_all_variables())
 
