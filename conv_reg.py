@@ -85,7 +85,7 @@ class ConvRegression(object):
             self.session = tf.Session(graph=self.graph)
             self.session.run(tf.initialize_all_variables())
 
-            tf.train.SummaryWriter('./log', graph=self.graph)
+            # tf.train.SummaryWriter('./log', graph=self.graph)
 
     def get_global_step(self):
         if self.session:

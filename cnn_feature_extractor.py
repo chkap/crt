@@ -81,6 +81,21 @@ class VggL1Extractor(FeatureExtractor):
         output_feature = self._session.run(self._output_feature, feed_dict=feed_dict)
         return output_feature[0,:,:,:]
 
+    def extract_multiple_features(self, images_list):
+        assert len(images_list)> 0
+        input_width = images_list[0].shape[1]
+        input_height = images_list[0].shape[0]
+
+        if input_height != self._feature_height or input_width != self._feature_width:
+            self._build_network(input_height, input_width)
+
+        _merge_list = []
+        for image in images_list:
+            _merge_list.append(image[np.newaxis, :, :, :])
+        merged = np.concatenate(_merge_list)
+        feed_dict = {self._input_holder: merged}
+        output_feature = self._session.run(self._output_feature, feed_dict=feed_dict)
+        return output_feature
 
 
 def _test_load_data():

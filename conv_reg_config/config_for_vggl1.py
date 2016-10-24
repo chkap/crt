@@ -1,11 +1,20 @@
 
 class TrainDataCfg(object):
-    SEARCH_PATCH_RATIO = 4
-    RESPONSE_GAUSSIAN_SIGMA_RATIO = 0.02
-    MOTION_GAUSSIAN_SIGMA_RATIO = 0.16
+    CONVOLUTION_SIZE_TH = 10
+    SEARCH_RATIO_WIDTH = 9
+    SEARCH_RATIO_HEIGHT = 5
+    # SEARCH_PATCH_RATIO = 4
+
+    SCALE_TEST_NUM = 1
+    SCALE_RATIO = 0.02
+
+    RESPONSE_GAUSSIAN_SIGMA_RATIO = 0.2
+    MOTION_GAUSSIAN_SIGMA_RATIO = 0.6
     OBJECT_RESIZE_TH = 20
-    SHOW_LABEL_RESPONSE_FID = '' # ''label_response'
-    SHOW_MOTION_MAP_FID = '' # ''motion_map'
+
+    SHOW_LABEL_RESPONSE_FID = ''  # 'label_response'
+    SHOW_MOTION_MAP_FID = ''  # 'motion_map'
+    SHOW_SEARCH_BGR_FID = ''  # 'search_bgr'
 
 
 class FhogCfg(object):
@@ -20,23 +29,24 @@ class FhogCnCfg(object):
 
 class ConvRegressionCfg(object):
     REGULARIZATION_COEF = 1e3
-    SGD_LEARNING_RATE = 5e-9
-    SGD_UPDATE_LEARNING_RATE = 1e-9
+    SGD_LEARNING_RATE = 20e-9
+    SGD_UPDATE_LEARNING_RATE = 5e-9
     SGD_MOMENTUM = 0.0
     LOSS_WEIGHT_A = 0.1
     LOSS_WEIGHT_B = 1
-    LOSS_THRESHOLD = 0.01
+    LOSS_THRESHOLD = 0.1
     VERBOSE = False
     SHOW_RESPONSE_FID = 'output_response'
-    SHOW_STEP = 20
+    SHOW_STEP = 5
 
 
 class ConvRegTrackerCfg(object):
-    TRAIN_LOSS_TH = 0.01
+    TRAIN_LOSS_TH = 0.02
     TRAIN_INIT_MAX_STEP_NUM = 4000
     TRAIN_UPDATE_MAX_STEP_NUM = 15
-    SHOW_OVERALL_RESPONSE_FID = '' # 'final response'
-    UPDATE_CONFIDENCE_TH = 0.3
+    TRAIN_UPDATE_STEP_NUM = 5
+    SHOW_OVERALL_RESPONSE_FID = ''  #'final response'
+    UPDATE_CONFIDENCE_TH = 0.2
 
 
 class TestCfg(object):

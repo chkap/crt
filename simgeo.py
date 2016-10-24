@@ -79,8 +79,8 @@ class Rect(object):
         sh = int(self.h * y_scale + 0.5)
         cx, cy = self.get_center()
 
-        tl_x = int(cx - sw/2.0 +0.5)
-        tl_y = int(cy - sh/2.0 +0.5)
+        tl_x = round(cx - (sw-1)/2.0)
+        tl_y = round(cy - (sh-1)/2.0)
 
         return Rect(tl_x,tl_y,sw,sh)
 

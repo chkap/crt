@@ -30,12 +30,20 @@ def show_map(map, figure_id=0):
     plt.pause(0.01)
 
 
+def show_image(image, fid):
+    plt.figure(fid)
+    plt.cla()
+    plt.imshow(image)
+    plt.show()
+    plt.pause(0.01)
+
+
 def show_track_res(frame_id, image, rect, gt_rect, fid):
     image = image.copy()
     cv2.rectangle(image,rect.get_tl(),rect.get_dr(),(0,0,255),2)
     cv2.rectangle(image,gt_rect.get_tl(),gt_rect.get_dr(),(255,0,0),2)
-    g,b,r = cv2.split(image)
-    image = cv2.merge((r,g,b))
+    b, g, r = cv2.split(image)
+    image = cv2.merge((r, g, b))
     plt.figure(fid)
     plt.cla()
     plt.imshow(image)
