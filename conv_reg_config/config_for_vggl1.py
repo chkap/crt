@@ -5,7 +5,7 @@ class TrainDataCfg(object):
     SEARCH_RATIO_HEIGHT = 5
     # SEARCH_PATCH_RATIO = 4
 
-    SCALE_TEST_NUM = 0
+    SCALE_TEST_NUM = 1
     SCALE_RATIO = 0.02
 
     RESPONSE_GAUSSIAN_SIGMA_RATIO = 0.10
@@ -44,9 +44,13 @@ class ConvRegTrackerCfg(object):
     TRAIN_LOSS_TH = 0.02
     TRAIN_INIT_MAX_STEP_NUM = 4000
     TRAIN_UPDATE_MAX_STEP_NUM = 15
-    TRAIN_UPDATE_STEP_NUM = 8
-    SHOW_OVERALL_RESPONSE_FID = ''  #'final response'
+    TRAIN_UPDATE_STEP_NUM = 6
     UPDATE_CONFIDENCE_TH = 0.2
+
+    TRAIN_DATA_HISTORY_LENGTH = 5
+    TRAIN_DATA_GAP = 2
+    SHOW_OVERALL_RESPONSE_FID = ''  #'final response'
+
 
 
 class TestCfg(object):

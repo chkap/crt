@@ -31,9 +31,12 @@ class ConvRegTracker(object):
         self._show_final_response_fid = ConvRegTrackerCfg.SHOW_OVERALL_RESPONSE_FID
         self._update_confidence_th = ConvRegTrackerCfg.UPDATE_CONFIDENCE_TH
         self._train_update_step = ConvRegTrackerCfg.TRAIN_UPDATE_STEP_NUM
+        self._train_data_history_length = ConvRegTrackerCfg.TRAIN_DATA_HISTORY_LENGTH
+        self._train_data_gap = ConvRegTrackerCfg.TRAIN_DATA_GAP
         self._last_obj_rect = None
 
         self._frame_no = None
+        self._train_pair_history = list()
 
     def init(self, image, init_rect):
         if self.conv_regression is not None:
@@ -58,6 +61,8 @@ class ConvRegTracker(object):
 
         self._last_obj_rect = init_rect
 
+        self._train_pair_history.append((search_feature[np.newaxis,:,:,:],
+                                         label_respponse[np.newaxis,:,:,np.newaxis]))
         # patch_rect = init_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio,
         #                                                     self.data_provider.search_patch_ratio)
         # feature = self.data_provider.generate_input_feature(image, patch_rect)
@@ -108,16 +113,42 @@ class ConvRegTracker(object):
         pred_obj_rect = self.data_provider.get_object_rect_by_index(pred_search_rect, pred_index_y, pred_index_x)
 
         label_response = self.data_provider.get_label_response(pred_index_y, pred_index_x)
+
+        self._train_pair_history.append((search_features[pred_scale_index,:,:,:][np.newaxis,:,:,:],
+                                         label_response[np.newaxis,:,:,np.newaxis]))
+
         pred_confidence = min(1.0, overall_response[pred_scale_index, pred_index_y, pred_index_x])
         if pred_confidence > self._update_confidence_th:
-            _update_step = pred_confidence * self._train_update_max_step_num
-            self.conv_regression.update(search_features[pred_scale_index,:,:,:][np.newaxis,:,:,:],
-                                        label_response[np.newaxis,:,:,np.newaxis],
+            # _update_step = pred_confidence * self._train_update_max_step_num
+            merged_features, merged_labels = self._get_history_train_data()
+            self.conv_regression.update(merged_features,
+                                        merged_labels,
                                         self._train_update_step,
                                         self._train_loss_th)
 
         self._last_obj_rect = pred_obj_rect
+
+        # remove the very old train data pair to save memory
+        _remove_idx = len(self._train_pair_history) - 2 - self._train_data_history_length * self._train_data_gap
+        if _remove_idx >= 0:
+            self._train_pair_history[_remove_idx] = None
         return pred_obj_rect
+
+    def _get_history_train_data(self):
+        assert len(self._train_pair_history) == self._frame_no + 1
+        train_features = []
+        train_labels = []
+        for i in range(self._train_data_history_length):
+            idx = len(self._train_pair_history)-1 - i * self._train_data_gap
+            if idx < 0:
+                break
+            train_features.append(self._train_pair_history[idx][0])
+            train_labels.append(self._train_pair_history[idx][1])
+
+        merged_features = np.concatenate(train_features, axis=0)
+        merged_labels = np.concatenate(train_labels, axis=0)
+        return merged_features, merged_labels
+
 
         # patch_rect = last_rect.get_copy().scale_from_center(self.data_provider.search_patch_ratio,
         #                                                     self.data_provider.search_patch_ratio)

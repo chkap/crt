@@ -19,6 +19,7 @@ class ConvRegression(object):
         self._global_step = None
         self._input_holder = None
         self._response_holder = None
+        # self._confidence_holder = None
         self._output_response = None
         self._weight = None
         self._bias = None
