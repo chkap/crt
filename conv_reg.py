@@ -44,7 +44,7 @@ class ConvRegression(object):
         self._show_step = ConvRegressionCfg.SHOW_STEP
 
         input_size = init_features.shape
-        input_mean = np.mean(init_features)
+        input_mean = np.mean(np.abs(init_features))
         self._build_graph(input_size, conv_size, input_mean)
 
     def _build_graph(self, input_size, conv_size, input_mean):

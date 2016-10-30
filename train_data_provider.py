@@ -9,6 +9,23 @@ from simgeo import Rect
 import display
 
 
+# def clip_image(image, rect):
+#     assert image.shape[2] == 3
+#     _image_rect = Rect(0,0, image.shape[1], image.shape[0])
+#     _intersect_rect = _image_rect.get_intersect_rect(rect)
+#     _image_patch = image[_intersect_rect.y:_intersect_rect.y+_intersect_rect.h,
+#                          _intersect_rect.x:_intersect_rect.x+_intersect_rect.w,
+#                          :].copy()
+#     _mean = np.array(np.mean(_image_patch, axis=(0,1)), dtype=np.uint8)
+#     new_image = np.zeros((rect.h,rect.w,3), dtype=np.uint8) + _mean
+#     _tl_y_idx = _intersect_rect.y - rect.y
+#     _tl_x_idx = _intersect_rect.x - rect.x
+#     _dr_y_idx = _tl_y_idx + _intersect_rect.h - 1
+#     _dr_x_idx = _tl_x_idx + _intersect_rect.w - 1
+#     assert _tl_x_idx >=0 and _tl_y_idx>=0 and _dr_y_idx < new_image.shape[0] and _dr_x_idx < new_image.shape[1]
+#     new_image[_tl_y_idx:_dr_y_idx+1,_tl_x_idx:_dr_x_idx+1,:] = _image_patch
+#     return new_image
+
 def clip_image(image,rect):
     iw = image.shape[1]
     ih = image.shape[0]
@@ -118,8 +135,8 @@ class TrainDataProvider(object):
 
         if self._show_search_bgr_fid:
             display.show_image(_search_bgr, self._show_search_bgr_fid)
-        _search_feature = self.extractor.extract_feature(_search_input)
-        return _search_rect, _search_bgr, _search_feature
+        _search_feature = self.extractor.extract_multiple_features([_search_input,])
+        return _search_rect, _search_bgr, _search_feature[0]
 
     def get_scaled_search_feature(self, image, object_rect):
         _scale_step_w = max(1, round(object_rect.w * self.scale_ratio))
@@ -128,7 +145,7 @@ class TrainDataProvider(object):
         for i in range(2 * self.scale_test_num + 1):
             w = object_rect.w + _scale_step_w * (i - self.scale_test_num)
             h = object_rect.h + _scale_step_h * (i - self.scale_test_num)
-            if w < 3 or h < 3:
+            if w < 5 or h < 5:
                 print('Warning: w < 3 or h < 3')
                 continue
             cx, cy = object_rect.get_center()

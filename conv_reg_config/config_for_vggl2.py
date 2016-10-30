@@ -30,21 +30,21 @@ class FhogCnCfg(object):
 class ConvRegressionCfg(object):
     REGULARIZATION_COEF = 1e3
     SGD_LEARNING_RATE = 2e-8
-    SGD_UPDATE_LEARNING_RATE = 1e-8
+    SGD_UPDATE_LEARNING_RATE = 5e-9
     SGD_MOMENTUM = 0.0
     LOSS_WEIGHT_A = 0.1
     LOSS_WEIGHT_B = 1.0
     LOSS_THRESHOLD = 0.1
-    VERBOSE = False
+    VERBOSE = True
     SHOW_RESPONSE_FID = 'output_response'
     SHOW_STEP = 5
 
 
 class ConvRegTrackerCfg(object):
-    TRAIN_LOSS_TH = 0.02
+    TRAIN_LOSS_TH = 0.01
     TRAIN_INIT_MAX_STEP_NUM = 4000
     TRAIN_UPDATE_MAX_STEP_NUM = 15
-    TRAIN_UPDATE_STEP_NUM = 1
+    TRAIN_UPDATE_STEP_NUM = 2
     UPDATE_CONFIDENCE_TH = 0.2
 
     TRAIN_DATA_HISTORY_LENGTH = 5

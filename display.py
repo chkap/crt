@@ -27,7 +27,7 @@ def show_map(map, figure_id=0):
     plt.imshow(map, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0), aspect='auto',interpolation='nearest')
     plt.colorbar()
     plt.show()
-    plt.pause(0.01)
+    plt.pause(0.02)
 
 
 def show_image(image, fid):

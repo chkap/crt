@@ -1,5 +1,6 @@
 import os
 import json
+import math
 
 import cv2
 import numpy as np
@@ -56,7 +57,7 @@ def choose_seq(seqs, col=10):
 
 def _test_tracker():
     seqs = load_seq_infos()
-    seqs.sort(key= lambda o: o.name)
+    seqs.sort(key=lambda o: o.name)
     show_fid = TestCfg.SHOW_TRACK_RESULT_FID
     trk = tracker.ConvRegTracker()
     while True:
@@ -103,7 +104,6 @@ def _test_traindata_provider():
         display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
 
 
-
 def _test_init_size():
     seqs = load_seq_infos()
     img = np.zeros((400,400,3), np.uint8)
@@ -123,7 +123,43 @@ def _test_init_size():
     plt.show()
     plt.waitforbuttonpress()
 
+
+def _test_statistic_motion():
+    seqs = load_seq_infos()
+    data_list = []
+    img = np.zeros((2001,2001,3), dtype=np.uint8)
+    for seq in seqs:
+        _tmp = []
+        _rect = Rect(*seq.gtRect[0])
+        for i in range(1, len(seq.gtRect)):
+            _next_rect = Rect(*seq.gtRect[i])
+            _size = math.sqrt(_rect.w*_rect.h)
+            rel_motion_x = (_next_rect.get_center()[0] - _rect.get_center()[0])/_size
+            rel_motion_y = (_next_rect.get_center()[1] - _rect.get_center()[1])/_size
+            _tmp.append((rel_motion_x, rel_motion_y))
+            _rect = _next_rect
+            idx = round(rel_motion_x * 1000) + 1000
+            idy = round(rel_motion_y * 1000) + 1000
+
+            if 0 <= idx < 2001 and 0 <= idy < 2001:
+                img[idy, idx, 1] = 255
+        data_list.extend(_tmp)
+    print('Total length: {}'.format(len(data_list)))
+    data = np.array(data_list, dtype=np.float)
+
+    import scipy.stats
+    rv = scipy.stats.norm.fit(data[:], floc=0.0)
+    print(rv)
+    cv2.circle(img, (1000,1000), radius=int(round(1000*rv[1])), color=(255,0,0), thickness=3)
+    plt.figure()
+    plt.imshow(img)
+    plt.show()
+
+    print('Variance: {:.4f}'.format(rv[1]))
+    plt.waitforbuttonpress()
+
 if __name__ == '__main__':
     _test_tracker()
     # _test_init_size()
     # _test_traindata_provider()
+    # _test_statistic_motion()
