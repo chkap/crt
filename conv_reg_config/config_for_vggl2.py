@@ -35,7 +35,7 @@ class ConvRegressionCfg(object):
     LOSS_WEIGHT_A = 0.1
     LOSS_WEIGHT_B = 1.0
     LOSS_THRESHOLD = 0.1
-    VERBOSE = True
+    VERBOSE = False
     SHOW_RESPONSE_FID = 'output_response'
     SHOW_STEP = 5
 

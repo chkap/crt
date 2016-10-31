@@ -12,7 +12,7 @@ class FeatureExtractor(object):
         self._resolution = 1.0
         self._channel_num = 1
 
-    def extract_feature(self, input_image):
+    def extract_multiple_features(self, input_images):
         pass
 
     def get_resolution(self):
