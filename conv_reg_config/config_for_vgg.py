@@ -9,8 +9,11 @@ class TrainDataCfg(object):
     SCALE_RATIO = 0.02
 
     RESPONSE_GAUSSIAN_SIGMA_RATIO = 0.10
-    MOTION_GAUSSIAN_SIGMA_RATIO = 0.6
+    MOTION_GAUSSIAN_SIGMA_RATIO = 0.5
     OBJECT_RESIZE_TH = 20
+
+    VGG_FEATURE_STD = 100.0
+    VGG_FEATURE_MEAN = 0.0
 
     SHOW_LABEL_RESPONSE_FID = ''  # 'label_response'
     SHOW_MOTION_MAP_FID = ''  # 'motion_map'
@@ -30,7 +33,7 @@ class FhogCnCfg(object):
 class ConvRegressionCfg(object):
     REGULARIZATION_COEF = 1e3
     SGD_LEARNING_RATE = 2e-8
-    SGD_UPDATE_LEARNING_RATE = 5e-9
+    SGD_UPDATE_LEARNING_RATE = 10e-9
     SGD_MOMENTUM = 0.0
     LOSS_WEIGHT_A = 0.1
     LOSS_WEIGHT_B = 1.0
@@ -44,12 +47,12 @@ class ConvRegTrackerCfg(object):
     TRAIN_LOSS_TH = 0.01
     TRAIN_INIT_MAX_STEP_NUM = 4000
     TRAIN_UPDATE_MAX_STEP_NUM = 15
-    TRAIN_UPDATE_STEP_NUM = 2
-    UPDATE_CONFIDENCE_TH = 0.2
+    TRAIN_UPDATE_STEP_NUM = 1
+    UPDATE_CONFIDENCE_TH = 0.0
 
     TRAIN_DATA_HISTORY_LENGTH = 5
     TRAIN_DATA_GAP = 2
-    SHOW_OVERALL_RESPONSE_FID = ''  #'final response'
+    SHOW_OVERALL_RESPONSE_FID = ''  # 'final response'
 
 
 class TestCfg(object):

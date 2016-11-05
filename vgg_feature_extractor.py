@@ -3,6 +3,8 @@ import cv2
 import tensorflow as tf
 
 from feature_extractor import FeatureExtractor
+import display
+from conv_reg_config import TrainDataCfg
 
 VGG_MODEL_PATH = '/home/chenkai/workspace/caffe_model/vgg16_D/VGG_16_layers_py3.npz'
 VGG_MEAN = [103.939, 116.779, 123.68]
@@ -15,6 +17,10 @@ class VggExtractor(FeatureExtractor):
         self._feature_height = 0
         self._channel_num = 64
         self._resolution = 4
+        self._feature_mean = TrainDataCfg.VGG_FEATURE_MEAN
+        self._feature_std = TrainDataCfg.VGG_FEATURE_STD
+        self._feature_offset = None
+        self._feature_scale = None
 
         self._graph = None
         self._session = None
@@ -53,6 +59,8 @@ class VggExtractor(FeatureExtractor):
         if input_height != self._feature_height or input_width != self._feature_width:
             self._build_network(input_height, input_width)
             self.pca = None
+            self._feature_offset = None
+            self._feature_scale = None
 
         _merge_list = []
         for image in input_images:
@@ -70,7 +78,21 @@ class VggExtractor(FeatureExtractor):
         else:
             assert self._channel_num == output_features.shape[3]
             re_features = output_features
-        return re_features
+
+        if not self._feature_offset or not self._feature_scale:
+            _mean = np.mean(re_features)
+            _std = np.std(re_features)
+            self._feature_offset = self._feature_mean - _mean
+            self._feature_scale = self._feature_std / _std
+
+        normalized_feature = self._feature_scale * (re_features-self._feature_offset)
+
+        # _mean = np.mean(normalized_feature)
+        # _std = np.std(normalized_feature)
+        # print('\tfeatures mean:{:.6e}, std:{:.6e}'.format(_mean, _std))
+        # hist, bin_edges = np.histogram(normalized_feature, bins=100)
+        # display.show_histogram(hist, bin_edges)
+        return normalized_feature
 
 
 class VggL1Extractor(VggExtractor):
@@ -506,7 +528,7 @@ class VggL5Extractor(VggExtractor):
             self._conv_data_52_bias = npz_file['conv5_2/biases']
             self._conv_data_53_weights = npz_file['conv5_3/weights']
             self._conv_data_53_bias = npz_file['conv5_3/biases']
-        print('VggL4 parameters loaded successfully!')
+        print('VggL5 parameters loaded successfully!')
 
 
 def _test_load_data():

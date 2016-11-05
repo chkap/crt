@@ -25,7 +25,7 @@ class ConvRegTracker(object):
     def __init__(self):
         self.data_provider = None
         self.conv_regression = None
-        self.feature_extractor = vgg_feature_extractor.VggL3Extractor
+        self.feature_extractor = vgg_feature_extractor.VggL4Extractor
         self._train_init_max_step_num = ConvRegTrackerCfg.TRAIN_INIT_MAX_STEP_NUM
         self._train_update_max_step_num = ConvRegTrackerCfg.TRAIN_UPDATE_MAX_STEP_NUM
         self._train_loss_th = ConvRegTrackerCfg.TRAIN_LOSS_TH
@@ -107,13 +107,14 @@ class ConvRegTracker(object):
         pred_response = self.conv_regression.inference(search_features)[:, :, :, 0]
         overall_response = motion_respponse[np.newaxis, :, :] * pred_response
 
-        if self._show_final_response_fid:
-            display.show_map(overall_response, self._show_final_response_fid)
         tmp = np.unravel_index([np.argmax(overall_response), ], overall_response.shape)
         pred_scale_index, pred_index_y, pred_index_x = tmp[0][0], tmp[1][0], tmp[2][0]
 
         pred_search_rect = search_rect_list[pred_scale_index]
         pred_obj_rect = self.data_provider.get_object_rect_by_index(pred_search_rect, pred_index_y, pred_index_x)
+
+        if self._show_final_response_fid:
+            display.show_map(overall_response[pred_scale_index], self._show_final_response_fid)
 
         label_response = self.data_provider.get_label_response(pred_index_y, pred_index_x)
 
@@ -122,6 +123,7 @@ class ConvRegTracker(object):
                                          label_response[np.newaxis,:,:,np.newaxis],
                                          pred_confidence))
 
+        # print('\tpred_confidence: {:6.3f}'.format(pred_confidence))
         if pred_confidence >= self._update_confidence_th:
             merged_features, merged_labels = self._get_history_train_data()
             self.conv_regression.update(merged_features,

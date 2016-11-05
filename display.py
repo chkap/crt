@@ -27,7 +27,15 @@ def show_map(map, figure_id=0):
     plt.imshow(map, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0), aspect='auto',interpolation='nearest')
     plt.colorbar()
     plt.show()
-    plt.pause(0.02)
+    plt.pause(0.01)
+
+
+def show_histogram(hist, bin_edges, fid='histogram'):
+    plt.figure(fid)
+    plt.cla()
+    plt.plot(bin_edges[:-1], hist)
+    plt.show()
+    plt.pause(0.01)
 
 
 def show_image(image, fid):
