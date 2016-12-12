@@ -6,7 +6,7 @@ from feature_extractor import FeatureExtractor
 import display
 from conv_reg_config import TrainDataCfg
 
-VGG_MODEL_PATH = '/home/chenkai/workspace/caffe_model/vgg16_D/VGG_16_layers_py3.npz'
+VGG_MODEL_PATH = '/home/chkap/workspace/caffe_model/vgg16_D/VGG_16_layers_py3.npz'
 VGG_MEAN = [103.939, 116.779, 123.68]
 
 
@@ -92,7 +92,7 @@ class VggExtractor(FeatureExtractor):
         # print('\tfeatures mean:{:.6e}, std:{:.6e}'.format(_mean, _std))
         # hist, bin_edges = np.histogram(normalized_feature, bins=100)
         # display.show_histogram(hist, bin_edges)
-        return normalized_feature
+        return re_features
 
 
 class VggL1Extractor(VggExtractor):
@@ -129,7 +129,7 @@ class VggL1Extractor(VggExtractor):
 
             self._output_feature = _max_pool_12_output
             self._session = tf.Session(graph=self._graph)
-            self._session.run(tf.initialize_all_variables())
+            self._session.run(tf.global_variables_initializer())
 
     def _load_data(self):
         with np.load(VGG_MODEL_PATH) as npz_file:
@@ -212,7 +212,7 @@ class VggL2Extractor(VggExtractor):
 
             self._output_feature = _max_pool_22_output
             self._session = tf.Session(graph=self._graph)
-            self._session.run(tf.initialize_all_variables())
+            self._session.run(tf.global_variables_initializer())
 
     def _load_data(self):
         with np.load(VGG_MODEL_PATH) as npz_file:
@@ -285,7 +285,7 @@ class VggL3Extractor(VggExtractor):
 
             self._output_feature = _conv_33_act
             self._session = tf.Session(graph=self._graph)
-            self._session.run(tf.initialize_all_variables())
+            self._session.run(tf.global_variables_initializer())
 
     def _load_data(self):
         with np.load(VGG_MODEL_PATH) as npz_file:
@@ -381,7 +381,7 @@ class VggL4Extractor(VggExtractor):
 
             self._output_feature = _conv_43_act
             self._session = tf.Session(graph=self._graph)
-            self._session.run(tf.initialize_all_variables())
+            self._session.run(tf.global_variables_initializer())
 
     def _load_data(self):
         with np.load(VGG_MODEL_PATH) as npz_file:
@@ -498,7 +498,7 @@ class VggL5Extractor(VggExtractor):
 
             self._output_feature = _conv_53_act
             self._session = tf.Session(graph=self._graph)
-            self._session.run(tf.initialize_all_variables())
+            self._session.run(tf.global_variables_initializer())
 
     def _load_data(self):
         with np.load(VGG_MODEL_PATH) as npz_file:

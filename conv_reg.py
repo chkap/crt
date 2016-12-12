@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 
 import numpy as np
 
@@ -79,12 +80,14 @@ class ConvRegression(object):
                               (tf.reduce_sum(self._weight*self._weight) + tf.mul(self._bias, self._bias))
             self._total_loss = self._pred_loss + self._regu_loss
 
+            # self._init_train_op = tf.train.GradientDescentOptimizer(learning_rate=self._learning_rate) \
+            #     .minimize(self._total_loss, global_step=self._global_step)
             self._init_train_op = tf.train.AdamOptimizer(self._learning_rate) \
                 .minimize(self._total_loss, global_step=self._global_step)
             self._update_train_op = tf.train.AdamOptimizer(self._update_learning_rate) \
                 .minimize(self._total_loss, global_step=self._global_step)
             self.session = tf.Session(graph=self.graph)
-            self.session.run(tf.initialize_all_variables())
+            self.session.run(tf.global_variables_initializer())
 
             # tf.train.SummaryWriter('./log', graph=self.graph)
 
@@ -99,6 +102,11 @@ class ConvRegression(object):
         feed_dict = {self._input_holder: features,
                      self._response_holder: response}
         i = 0
+        max_idx = np.argmax(response)
+        # snr_list = []
+        # response_save_dir = './tmp/th000_a1_response/'
+        # if not os.path.isdir(response_save_dir):
+        #     os.mkdir(response_save_dir)
         while i < max_step_num:
             if self._verbose:
                 fetches = [self._init_train_op, self._pred_loss, self._regu_loss, self._total_loss, self._weight,
@@ -111,13 +119,26 @@ class ConvRegression(object):
                 self._pred_loss_list.append(pred_loss)
                 self._regu_loss_list.append(regu_loss)
                 self._total_loss_list.append(total_loss)
+                _peak = res.flat[max_idx]
+                _snr = np.exp(res.flat[max_idx] - np.mean(res))
+
+                # print('\t\tsnr={:6.4f}, max={:.4f}'.format(_snr, _peak))
+                # snr_list.append((_snr, _peak))
                 if step % self._show_step == 0 and self._show_response_fid:
-                    display.show_map(res[0,:,:,0], self._show_response_fid)
+                    # save_path = os.path.join(response_save_dir, 'step_{:04d}.pdf'.format(step))
+                    display.show_map(res[0,:,:,0], self._show_response_fid, 'Train step: {:6d}'.format(step))
+                    # display.show_3d_map(res[0,:,:,0], figure_id='3d_regression_results')
             else:
                 _, total_loss = self.session.run((self._init_train_op, self._total_loss), feed_dict=feed_dict)
             if total_loss < loss_th:
                 break
             i += 1
+
+        # snr_save_path = os.path.join(response_save_dir, 'snr_list.txt')
+        # with open(snr_save_path, 'w') as write_file:
+        #     for _snr, _peak in snr_list:
+        #         write_file.write('{:.6e}\t{:.6e}\n'.format(_snr,_peak))
+
         # if i >= max_step_num:
         #     print('Warning, total_loss larger than loss_th even after {:d}steps'.format(i))
 
@@ -138,7 +159,7 @@ class ConvRegression(object):
                 self._regu_loss_list.append(regu_loss)
                 self._total_loss_list.append(total_loss)
                 if step % self._show_step == 0 and self._show_response_fid:
-                    display.show_map(res[0,:,:,0], self._show_response_fid)
+                    display.show_map(res[0,:,:,0], self._show_response_fid, 'Train step: {:6d}'.format(step))
             else:
                 _, total_loss = self.session.run((self._update_train_op, self._total_loss), feed_dict=feed_dict)
             if total_loss < loss_th:

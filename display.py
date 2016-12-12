@@ -3,6 +3,8 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 import cv2
 
 from simgeo import Rect
@@ -21,12 +23,34 @@ def show_float_image(image,figure_id = 62346):
     plt.show()
 
 
-def show_map(map, figure_id=0):
-    plt.figure(figure_id)
+def show_map(map, figure_id=0, title=None, save_path=None):
+    fig =plt.figure(figure_id, figsize=(5, 4))
+    fig.patch.set_color((1, 1, 1, 1))
     plt.clf()
-    plt.imshow(map, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0), aspect='auto',interpolation='nearest')
+    plt.imshow(map, norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0), aspect='auto', interpolation='nearest')
+    if title:
+        plt.title(title)
     plt.colorbar()
     plt.show()
+    plt.pause(0.01)
+
+    if save_path:
+        fig.savefig(save_path)
+
+
+def show_3d_map(map, figure_id=21568, save_path=None):
+    _x_index = np.arange(0, map.shape[1])
+    _y_index = np.arange(0, map.shape[0])
+    yv, xv = np.meshgrid(_y_index, _x_index, indexing='ij')
+    zv = map
+
+    fig = plt.figure(figure_id)
+    fig.patch.set_color(c=(1, 1, 1, 1))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(xv, yv, zv, rstride=1, cstride=1, cmap=cm.cmap_d['jet'],
+                    norm=matplotlib.colors.Normalize(vmin=0.0, vmax=1.0))
+    # ax.set_zlim(-0.01, 1.01)
+    fig.show()
     plt.pause(0.01)
 
 
@@ -38,10 +62,14 @@ def show_histogram(hist, bin_edges, fid='histogram'):
     plt.pause(0.01)
 
 
-def show_image(image, fid):
-    plt.figure(fid)
+def show_image(image, fid, title=None):
+    plt.figure(fid, figsize=(5,4))
     plt.cla()
+    b, g, r = cv2.split(image)
+    image = cv2.merge((r, g, b))
     plt.imshow(image)
+    if title:
+        plt.title(title)
     plt.show()
     plt.pause(0.01)
 
@@ -52,10 +80,10 @@ def show_track_res(frame_id, image, rect, gt_rect, fid):
     cv2.rectangle(image,gt_rect.get_tl(),gt_rect.get_dr(),(255,0,0),2)
     b, g, r = cv2.split(image)
     image = cv2.merge((r, g, b))
-    plt.figure(fid)
+    plt.figure(fid, figsize=(5, 4))
     plt.cla()
     plt.imshow(image)
-    plt.title('fid:{:4d}'.format(frame_id))
+    plt.title('track results, fid:{:4d}'.format(frame_id))
     plt.show()
     plt.pause(0.01)
 

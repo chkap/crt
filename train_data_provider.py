@@ -3,7 +3,7 @@ import math
 import numpy as np
 import cv2
 
-import feature_extractor
+# import feature_extractor
 from conv_reg_config import TrainDataCfg
 from simgeo import Rect
 import display
@@ -134,7 +134,7 @@ class TrainDataProvider(object):
         _search_input = cv2.resize(_search_bgr, (self.input_search_w, self.input_search_h))
 
         if self._show_search_bgr_fid:
-            display.show_image(_search_bgr, self._show_search_bgr_fid)
+            display.show_image(_search_bgr, self._show_search_bgr_fid, 'Train & search patch')
         _search_feature = self.extractor.extract_multiple_features([_search_input,])
         return _search_rect, _search_bgr, _search_feature[0]
 
@@ -146,7 +146,7 @@ class TrainDataProvider(object):
             w = object_rect.w + _scale_step_w * (i - self.scale_test_num)
             h = object_rect.h + _scale_step_h * (i - self.scale_test_num)
             if w < 5 or h < 5:
-                print('Warning: w < 3 or h < 3')
+                print('Warning: w < 5 or h < 5')
                 continue
             cx, cy = object_rect.get_center()
             tl_x = round(cx - (w - 1)/2.0)
@@ -170,7 +170,7 @@ class TrainDataProvider(object):
             _search_bgr_list.append(_search_bgr)
             _search_input_list.append(_search_input)
         if self._show_search_bgr_fid:
-            display.show_image(_search_bgr_list[0], self._show_search_bgr_fid)
+            display.show_image(_search_bgr_list[0], self._show_search_bgr_fid, 'Train & search patch')
 
         _search_features = self.extractor.extract_multiple_features(_search_input_list)
         return _search_rect_list, _search_bgr_list, _search_features, scaled_object_rects
@@ -199,7 +199,7 @@ class TrainDataProvider(object):
         response = np.exp(-(_y1 + _x1))
         # response[response < 1e-5] = 0.0
         if self._show_label_response_fid:
-            display.show_map(response, self._show_label_response_fid)
+            display.show_map(response, self._show_label_response_fid, 'Regression targets')
         return response
 
     def get_motion_response(self, obj_index_y, obj_index_x):
@@ -214,7 +214,7 @@ class TrainDataProvider(object):
         response = np.exp(-(_y1 + _x1))
         # response[response < 1e-5] = 0.0
         if self._show_motion_map_fid:
-            display.show_map(response, self._show_motion_map_fid)
+            display.show_map(response, self._show_motion_map_fid, 'Motion map')
         return response
 
     def get_object_rect_by_index(self, search_rect, obj_index_y, obj_index_x):

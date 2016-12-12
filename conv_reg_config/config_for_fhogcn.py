@@ -39,6 +39,6 @@ class ConvRegTrackerCfg(object):
 
 
 class TestCfg(object):
-    SEQUENCE_DIR = '/home/chenkai/workspace/tracker_benchmark_python/data/'
+    SEQUENCE_DIR = '/home/chkap/workspace/tracker_benchmark_python/data/'
     SHOW_TRACK_RESULT_FID = 'track results'
 

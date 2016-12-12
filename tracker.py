@@ -7,8 +7,8 @@ from train_data_provider import TrainData, TrainDataProvider
 from conv_reg_config import ConvRegTrackerCfg
 from conv_reg import ConvRegression
 import display
-import feature_extractor
-import cnn_feature_extractor
+# import feature_extractor
+# import cnn_feature_extractor
 import vgg_feature_extractor
 
 
@@ -114,7 +114,8 @@ class ConvRegTracker(object):
         pred_obj_rect = self.data_provider.get_object_rect_by_index(pred_search_rect, pred_index_y, pred_index_x)
 
         if self._show_final_response_fid:
-            display.show_map(overall_response[pred_scale_index], self._show_final_response_fid)
+            display.show_map(overall_response[pred_scale_index], self._show_final_response_fid, 'Final prediction map')
+            display.show_map(pred_response[pred_scale_index], 'pred_response', 'Regression results')
 
         label_response = self.data_provider.get_label_response(pred_index_y, pred_index_x)
 
