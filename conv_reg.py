@@ -72,12 +72,12 @@ class ConvRegression(object):
             _weight_map = self._loss_weight_a * tf.exp(self._loss_weight_b*self._response_holder)
             _diff_map = self._output_response - self._response_holder
             _sign_map = (tf.sign(tf.abs(_diff_map) - self._loss_threshold) + 1) / 2
-            _sum_map = tf.mul(tf.mul(_weight_map, _sign_map), _diff_map)
+            _sum_map = tf.multiply(tf.multiply(_weight_map, _sign_map), _diff_map)
             _l2_loss = tf.reduce_sum(_sum_map * _sum_map, reduction_indices=[1,2,3])
             self._pred_loss = tf.reduce_mean(_l2_loss, reduction_indices=0)
             # self._pred_loss = tf.nn.l2_loss(_mean_loss, name='l2_loss')
             self._regu_loss = 0.5*self._regularization_coef * \
-                              (tf.reduce_sum(self._weight*self._weight) + tf.mul(self._bias, self._bias))
+                              (tf.reduce_sum(tf.square(self._weight)) + tf.multiply(self._bias, self._bias))
             self._total_loss = self._pred_loss + self._regu_loss
 
             # self._init_train_op = tf.train.GradientDescentOptimizer(learning_rate=self._learning_rate) \

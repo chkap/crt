@@ -37,7 +37,7 @@ class ConvRegressionCfg(object):
     SGD_MOMENTUM = 0.0
     LOSS_WEIGHT_A = 0.1
     LOSS_WEIGHT_B = 1.0
-    LOSS_THRESHOLD = 0.1
+    LOSS_THRESHOLD = 0.0
     VERBOSE = False
     SHOW_RESPONSE_FID = 'output_response'
     SHOW_STEP = 2
@@ -56,6 +56,6 @@ class ConvRegTrackerCfg(object):
 
 
 class TestCfg(object):
-    SEQUENCE_DIR = '/home/chkap/workspace/tracker_benchmark_python/data/'
+    SEQUENCE_DIR = '/home/chkap/workspace/visual_tracking/tracker_benchmark_python/data/'
     SHOW_TRACK_RESULT_FID = 'track results'
 
