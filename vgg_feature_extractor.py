@@ -26,6 +26,7 @@ class VggExtractor(FeatureExtractor):
         self._session = None
         self._input_holder = None
         self._output_feature = None
+        self._output_feature_after_pca = None
 
         self._use_pca = True
         self.pca = None
@@ -33,6 +34,18 @@ class VggExtractor(FeatureExtractor):
 
     def _build_network(self, input_height, input_width):
         pass
+
+    def _build_pca_network(self):
+        with self._graph.as_default():
+            _output_channel = self._output_feature.shape.dims[-1]
+            self._pca_mean = tf.Variable(tf.zeros([1, 1, 1, _output_channel]), trainable=False)
+            self._pca_vector = tf.Variable(tf.zeros([1, 1, _output_channel, self._channel_num]),
+                                           trainable=False,
+                                           expected_shape=[1, 1, _output_channel, self._channel_num])
+            _sub_mean = self._output_feature - self._pca_mean
+            self._output_feature_after_pca = tf.nn.conv2d(_sub_mean, self._pca_vector, [1, 1, 1, 1], padding='SAME')
+            _pca_initializer = tf.variables_initializer([self._pca_mean, self._pca_vector])
+            self._session.run(_pca_initializer)
 
     def _load_data(self):
         pass
@@ -58,6 +71,7 @@ class VggExtractor(FeatureExtractor):
 
         if input_height != self._feature_height or input_width != self._feature_width:
             self._build_network(input_height, input_width)
+            self._build_pca_network()
             self.pca = None
             self._feature_offset = None
             self._feature_scale = None
@@ -66,33 +80,45 @@ class VggExtractor(FeatureExtractor):
         for image in input_images:
             _merge_list.append(image[np.newaxis, :, :, :])
         merged = np.concatenate(_merge_list, axis=0)
-        feed_dict = {self._input_holder: merged}
-        output_features = self._session.run(self._output_feature, feed_dict=feed_dict)
-
-        if self._use_pca:
-            assert self._channel_num < output_features.shape[3]
-            if not self.pca:
-                self.pca = FeatureReduction(output_features[0], self._channel_num)
-
-            re_features = self.pca.project(output_features)
+        if not self._use_pca:
+            output_features = self._session.run(self._output_feature, feed_dict={self._input_holder: merged})
         else:
-            assert self._channel_num == output_features.shape[3]
-            re_features = output_features
+            if not self.pca:
+                _org_features = self._session.run(self._output_feature, feed_dict={self._input_holder: merged})
+                self.pca = FeatureReduction(_org_features[0], self._channel_num)
+                self._session.run(self._pca_mean.assign(self.pca.mean.reshape((1, 1, 1, -1))))
+                self._session.run(self._pca_vector.assign(self.pca.eigen_vecs.T.reshape((1, 1, -1, self._channel_num))))
+                output_features = self._session.run(self._output_feature_after_pca,
+                                                    feed_dict={self._output_feature: _org_features})
+            else:
+                output_features = self._session.run(self._output_feature_after_pca,
+                                                    feed_dict={self._input_holder: merged})
+        # if self._use_pca:
+        #     assert self._channel_num < output_features.shape[3]
+        #     if not self.pca:
+        #         self.pca = FeatureReduction(output_features[0], self._channel_num)
+        #         self._pca_mean.assign(self.pca.mean.reshape((1, 1, 1, self._channel_num)))
+        #         self._pca_vector.assign(self.pca.eigen_vecs.reshape((1,1,-1,self._channel_num)))
+        #
+        #     re_features = self.pca.project(output_features)
+        # else:
+        #     assert self._channel_num == output_features.shape[3]
+        #     re_features = output_features
 
         if not self._feature_offset or not self._feature_scale:
-            _mean = np.mean(re_features)
-            _std = np.std(re_features)
+            _mean = np.mean(output_features)
+            _std = np.std(output_features)
             self._feature_offset = self._feature_mean - _mean
             self._feature_scale = self._feature_std / _std
 
-        normalized_feature = self._feature_scale * (re_features-self._feature_offset)
+        # normalized_feature = self._feature_scale * (output_features-self._feature_offset)
 
         # _mean = np.mean(normalized_feature)
         # _std = np.std(normalized_feature)
         # print('\tfeatures mean:{:.6e}, std:{:.6e}'.format(_mean, _std))
         # hist, bin_edges = np.histogram(normalized_feature, bins=100)
         # display.show_histogram(hist, bin_edges)
-        return re_features
+        return output_features
 
 
 class VggL1Extractor(VggExtractor):

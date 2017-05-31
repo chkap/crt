@@ -25,7 +25,7 @@ class ConvRegTracker(object):
     def __init__(self):
         self.data_provider = None
         self.conv_regression = None
-        self.feature_extractor = vgg_feature_extractor.VggL1Extractor
+        self.feature_extractor = vgg_feature_extractor.VggL4Extractor
         self._train_init_max_step_num = ConvRegTrackerCfg.TRAIN_INIT_MAX_STEP_NUM
         self._train_update_max_step_num = ConvRegTrackerCfg.TRAIN_UPDATE_MAX_STEP_NUM
         self._train_loss_th = ConvRegTrackerCfg.TRAIN_LOSS_TH
