@@ -6,8 +6,8 @@ from feature_extractor import FeatureExtractor
 import display
 from conv_reg_config import TrainDataCfg
 
-VGG_MODEL_PATH = '/home/chkap/workspace/caffe_model/vgg16_D/VGG_16_layers_py3.npz'
-VGG_MEAN = [103.939, 116.779, 123.68]
+VGG_MODEL_PATH = TrainDataCfg.VGG_MODEL_PATH
+VGG_MEAN = TrainDataCfg.VGG_MEAN
 
 
 class VggExtractor(FeatureExtractor):
@@ -85,6 +85,8 @@ class VggExtractor(FeatureExtractor):
         else:
             if not self.pca:
                 _org_features = self._session.run(self._output_feature, feed_dict={self._input_holder: merged})
+                # _temp_save_path = './tmp/conv_feature.npy'
+                # np.save(_temp_save_path, _org_features)
                 self.pca = FeatureReduction(_org_features[0], self._channel_num)
                 self._session.run(self._pca_mean.assign(self.pca.mean.reshape((1, 1, 1, -1))))
                 self._session.run(self._pca_vector.assign(self.pca.eigen_vecs.T.reshape((1, 1, -1, self._channel_num))))

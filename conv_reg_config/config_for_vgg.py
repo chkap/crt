@@ -1,3 +1,10 @@
+import inspect
+import os.path
+
+
+class BasicCfg(object):
+    PROJECT_ROOT_DIR = os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), '..')
+
 
 class TrainDataCfg(object):
     CONVOLUTION_SIZE_TH = 10
@@ -12,6 +19,8 @@ class TrainDataCfg(object):
     MOTION_GAUSSIAN_SIGMA_RATIO = 0.6
     OBJECT_RESIZE_TH = 20
 
+    VGG_MODEL_PATH = os.path.join(BasicCfg.PROJECT_ROOT_DIR, 'vgg_model/VGG_16_layers_py3.npz')
+    VGG_MEAN = [103.939, 116.779, 123.68]
     VGG_FEATURE_STD = 100.0
     VGG_FEATURE_MEAN = 0.0
 
@@ -33,14 +42,14 @@ class FhogCnCfg(object):
 class ConvRegressionCfg(object):
     REGULARIZATION_COEF = 1e3
     SGD_LEARNING_RATE = 2e-8
-    SGD_UPDATE_LEARNING_RATE = 5e-9
+    SGD_UPDATE_LEARNING_RATE = 1e-8
     SGD_MOMENTUM = 0.0
     LOSS_WEIGHT_A = 0.1
     LOSS_WEIGHT_B = 1.0
     LOSS_THRESHOLD = 0.0
     VERBOSE = False
     SHOW_RESPONSE_FID = 'output_response'
-    SHOW_STEP = 2
+    SHOW_STEP = 1
 
 
 class ConvRegTrackerCfg(object):
@@ -56,6 +65,6 @@ class ConvRegTrackerCfg(object):
 
 
 class TestCfg(object):
-    SEQUENCE_DIR = '/home/chkap/workspace/visual_tracking/tracker_benchmark_python/data/'
+    SEQUENCE_DIR = os.path.join(BasicCfg.PROJECT_ROOT_DIR, 'test/data')
     SHOW_TRACK_RESULT_FID = 'track results'
 

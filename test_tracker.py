@@ -60,25 +60,23 @@ def _test_tracker():
     seqs.sort(key=lambda o: o.name)
     show_fid = TestCfg.SHOW_TRACK_RESULT_FID
     trk = tracker.ConvRegTracker()
-    while True:
-        # seq = seqs[18]
-        seq = choose_seq(seqs)
-        init = seq.gtRect[0]
-        init_rect = Rect(*init)
-        img_root = os.path.join(TestCfg.SEQUENCE_DIR, '../', seq.path)
+    seq = seqs[0]
+    init = seq.gtRect[0]
+    init_rect = Rect(*init)
+    img_root = os.path.join(TestCfg.SEQUENCE_DIR, '../', seq.path)
+    path = os.path.join(img_root,
+                        seq.imgFormat.format(seq.startFrame))
+    init_image = cv2.imread(path)
+    display.show_track_res(seq.startFrame, init_image, init_rect, init_rect, show_fid)
+    trk.init(init_image, init_rect)
+    for fid in range(1, len(seq.gtRect)):
+        frame_id = fid + seq.startFrame
         path = os.path.join(img_root,
-                            seq.imgFormat.format(seq.startFrame))
-        init_image = cv2.imread(path)
-        display.show_track_res(seq.startFrame, init_image, init_rect, init_rect, show_fid)
-        trk.init(init_image, init_rect)
-        for fid in range(1, len(seq.gtRect)):
-            frame_id = fid + seq.startFrame
-            path = os.path.join(img_root,
-                                seq.imgFormat.format(frame_id))
-            image = cv2.imread(path)
-            gt_rect = Rect(*seq.gtRect[fid])
-            pred_rect = trk.track(image)
-            display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
+                            seq.imgFormat.format(frame_id))
+        image = cv2.imread(path)
+        gt_rect = Rect(*seq.gtRect[fid])
+        pred_rect = trk.track(image)
+        display.show_track_res(frame_id, image, gt_rect, pred_rect, show_fid)
 
 
 def _test_traindata_provider():
@@ -157,6 +155,7 @@ def _test_statistic_motion():
 
     print('Variance: {:.4f}'.format(rv[1]))
     plt.waitforbuttonpress()
+
 
 if __name__ == '__main__':
     _test_tracker()
